@@ -8,6 +8,7 @@ export async function POST(req: Request) {
 
   revalidateTag('products');
   if (productId) revalidateTag(`product:${productId}`);
+  
   revalidateTag('categories');
   if (categorySlug) revalidateTag(`plp:cat:${categorySlug}`);
 

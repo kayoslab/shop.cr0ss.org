@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { headers } from 'next/headers';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
 
-// Simple inline SVGs (no extra deps)
 function BasketIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
@@ -23,50 +22,64 @@ async function fetchCategories(): Promise<CategoryDTO[]> {
   return data.items;
 }
 
-function CategoryTree({ nodes }: { nodes: CategoryDTO[] }) {
-  return (
-    <ul className="pl-3 space-y-1">
-      {nodes.map((n) => (
-        <li key={n.id}>
-          <Link href={`/category/${n.slug}`} className="hover:underline">
-            {n.name}
-          </Link>
-          {n.children.length > 0 && (
-            <div className="mt-1 border-l border-gray-200 dark:border-gray-700 ml-2">
-              <CategoryTree nodes={n.children} />
-            </div>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
+function topLevel(categories: CategoryDTO[]): CategoryDTO[] {
+  return categories.filter(c => c.parentId === null);
 }
 
 export default async function Nav() {
-  const categories = await fetchCategories();
+  const top = topLevel(await fetchCategories());
+
+  // Show first N inline; rest go into "More"
+  const MAX_INLINE = 6;
+  const inline = top.slice(0, MAX_INLINE);
+  const overflow = top.slice(MAX_INLINE);
 
   return (
     <header className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur dark:bg-gray-900/80">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        {/* Left: Brand */}
-        <div className="flex items-center gap-4">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
+        {/* Left: Brand + primary nav */}
+        <div className="flex min-w-0 items-center gap-6">
+          <Link href="/" className="shrink-0 text-lg font-semibold tracking-tight">
             Demo Store
           </Link>
-          <nav className="hidden md:flex items-center gap-6">
-            {/* Categories dropdown */}
-            <div className="relative group">
-              <button className="text-gray-700 hover:text-black dark:text-gray-300 dark:hover:text-white">
-                Categories
-              </button>
-              <div className="invisible absolute left-0 mt-2 w-[28rem] rounded-xl border bg-white p-4 shadow-xl opacity-0 transition-all group-hover:visible group-hover:opacity-100 dark:border-gray-800 dark:bg-gray-900">
-                {categories.length === 0 ? (
-                  <div className="text-sm text-gray-500">No categories</div>
-                ) : (
-                  <CategoryTree nodes={categories} />
-                )}
+
+          {/* Desktop primary nav */}
+          <nav className="hidden md:flex items-center gap-5">
+            <Link href="/" className="text-gray-700 hover:text-black dark:text-gray-300 dark:hover:text-white">
+              Home
+            </Link>
+
+            {inline.map((c) => (
+              <Link
+                key={c.id}
+                href={`/category/${c.slug}`}
+                className="text-gray-700 hover:text-black dark:text-gray-300 dark:hover:text-white"
+              >
+                {c.name}
+              </Link>
+            ))}
+
+            {overflow.length > 0 && (
+              <div className="relative group">
+                <button className="text-gray-700 hover:text-black dark:text-gray-300 dark:hover:text-white">
+                  More
+                </button>
+                <div className="invisible absolute left-0 mt-2 min-w-[16rem] rounded-xl border bg-white p-3 shadow-xl opacity-0 transition-all group-hover:visible group-hover:opacity-100 dark:border-gray-800 dark:bg-gray-900">
+                  <ul className="space-y-1">
+                    {overflow.map(c => (
+                      <li key={c.id}>
+                        <Link
+                          href={`/category/${c.slug}`}
+                          className="block rounded px-2 py-1 text-sm text-gray-700 hover:bg-gray-50 hover:text-black dark:text-gray-300 dark:hover:bg-gray-800"
+                        >
+                          {c.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-            </div>
+            )}
           </nav>
         </div>
 
@@ -74,21 +87,30 @@ export default async function Nav() {
         <div className="flex items-center gap-4">
           <Link href="/cart" className="relative inline-flex items-center">
             <BasketIcon className="h-6 w-6 text-gray-700 dark:text-gray-300" />
-            {/* Placeholder count */}
+            {/* Replace with real count later */}
             <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">0</span>
           </Link>
         </div>
       </div>
 
-      {/* Mobile secondary row */}
-      <div className="md:hidden border-t px-4 py-2 bg-white dark:bg-gray-900">
-        <nav className="flex items-center gap-6">
-          <Link href="/categories" className="text-gray-700 hover:text-black dark:text-gray-300 dark:hover:text-white">
-            Categories
+      {/* Mobile category scroller */}
+      <div className="md:hidden border-t px-2 py-2 bg-white dark:bg-gray-900">
+        <nav className="flex items-center gap-3 overflow-x-auto scrollbar-none">
+          <Link
+            href="/"
+            className="shrink-0 rounded-full border px-3 py-1 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-200 dark:hover:bg-gray-800"
+          >
+            Home
           </Link>
-          <Link href="/cart" className="text-gray-700 hover:text-black dark:text-gray-300 dark:hover:text-white">
-            Cart
-          </Link>
+          {top.map((c) => (
+            <Link
+              key={c.id}
+              href={`/category/${c.slug}`}
+              className="shrink-0 rounded-full border px-3 py-1 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              {c.name}
+            </Link>
+          ))}
         </nav>
       </div>
     </header>

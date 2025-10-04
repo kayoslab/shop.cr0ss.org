@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { unstable_cache as cache } from 'next/cache';
 import type { ProductPagedQueryResponse } from '@commercetools/platform-sdk';
-import { getProducts } from '@/lib/ct/queries';
+import { getProducts } from '@/lib/ct/products';
 import { productToDTO, type ProductDTO } from '@/lib/ct/dto/product';
 
 interface ListResponse {

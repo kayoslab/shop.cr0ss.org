@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { unstable_cache as cache } from 'next/cache';
 import type { Product } from '@commercetools/platform-sdk';
-import { getProductById } from '@/lib/ct/queries';
+import { getProductById } from '@/lib/ct/products';
 import { productToDTO, type ProductDTO } from '@/lib/ct/dto/product';
 
 async function _fetchProduct(id: string, locale: string): Promise<ProductDTO | null> {

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { unstable_cache as cache } from 'next/cache';
 import type { Product } from '@commercetools/platform-sdk';
 import { getProductById } from '@/lib/ct/queries';
@@ -16,10 +16,14 @@ const cachedFetchProduct = (id: string, locale: string) =>
     revalidate: 300,
   })(id, locale);
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
-  const locale = req.headers.get('x-locale') ?? process.env.DEMO_DEFAULT_LOCALE ?? 'de-DE';
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
+  const locale = request.headers.get('x-locale') ?? process.env.DEMO_DEFAULT_LOCALE ?? 'de-DE';
 
-  const data = await cachedFetchProduct(params.id, locale);
+  const data = await cachedFetchProduct(id, locale);
   if (!data) return new NextResponse('Not found', { status: 404 });
 
   return NextResponse.json(data, {

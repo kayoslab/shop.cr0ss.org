@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { unstable_cache as cache } from 'next/cache';
 import type { ProductPagedQueryResponse } from '@commercetools/platform-sdk';
 import { getProducts } from '@/lib/ct/queries';
@@ -19,24 +19,18 @@ async function _fetchProducts(qsString: string, locale: string): Promise<ListRes
   const data: ProductPagedQueryResponse = await getProducts({ limit, offset });
   const items = (data.results ?? []).map((p) => productToDTO(p, locale));
 
-  return {
-    items,
-    total: data.total ?? items.length,
-    limit,
-    offset,
-  };
+  return { items, total: data.total ?? items.length, limit, offset };
 }
 
-// cache key contains inputs; no cookies() calls inside
 const cachedFetchProducts = (qsString: string, locale: string) =>
   cache(_fetchProducts, ['api-products', qsString, locale], {
     tags: ['products'],
     revalidate: 300,
   })(qsString, locale);
 
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const locale = req.headers.get('x-locale') ?? process.env.DEMO_DEFAULT_LOCALE ?? 'de-DE';
+export async function GET(request: NextRequest) {
+  const url = new URL(request.url);
+  const locale = request.headers.get('x-locale') ?? process.env.DEMO_DEFAULT_LOCALE ?? 'de-DE';
 
   const data = await cachedFetchProducts(url.searchParams.toString(), locale);
   return NextResponse.json(data, {

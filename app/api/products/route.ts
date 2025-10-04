@@ -4,6 +4,8 @@ import type { ProductPagedQueryResponse } from '@commercetools/platform-sdk';
 import { getProducts } from '@/lib/ct/queries';
 import { productToDTO, type ProductDTO } from '@/lib/ct/dto/product';
 
+export const dynamic = 'force-dynamic';
+
 interface ListResponse {
   items: ProductDTO[];
   total: number;

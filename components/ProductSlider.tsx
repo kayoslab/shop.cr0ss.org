@@ -11,8 +11,8 @@ interface ListResponse {
 
 async function fetchRecommended(limit = 12): Promise<ProductDTO[]> {
   const h = headers();
-  const proto = h.get('x-forwarded-proto') ?? 'http';
-  const host = h.get('host');
+  const proto = (await h).get('x-forwarded-proto') ?? 'http';
+  const host = (await h).get('host');
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
   const res = await fetch(`${base}/api/products?limit=${limit}`, { next: { tags: ['products'] } });
   if (!res.ok) return [];

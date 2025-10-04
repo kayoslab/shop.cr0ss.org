@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import type { ProductDTO } from '@/lib/ct/dto/product';
 
+export const dynamic = 'force-dynamic';
+
 interface ListResponse {
   items: ProductDTO[];
   total: number;

@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import type { ProductDTO } from '@/lib/ct/dto/product';
 
+export const dynamic = 'force-dynamic';
+
 async function fetchProduct(id: string): Promise<ProductDTO | null> {
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
   const res = await fetch(`${base}/api/products/${id}`);

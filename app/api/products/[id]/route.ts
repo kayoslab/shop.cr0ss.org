@@ -4,8 +4,6 @@ import type { Product } from '@commercetools/platform-sdk';
 import { getProductById } from '@/lib/ct/queries';
 import { productToDTO, type ProductDTO } from '@/lib/ct/dto/product';
 
-export const dynamic = 'force-dynamic';
-
 async function _fetchProduct(id: string, locale: string): Promise<ProductDTO | null> {
   const p: Product | undefined = await getProductById(id).catch(() => undefined);
   if (!p) return null;

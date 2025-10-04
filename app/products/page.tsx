@@ -1,9 +1,18 @@
 import Link from 'next/link';
+import type { ProductDTO } from '@/lib/ct/dto/product';
 
-async function fetchProducts() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/products`, {});
+interface ListResponse {
+  items: ProductDTO[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+async function fetchProducts(): Promise<ListResponse> {
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+  const res = await fetch(`${base}/api/products`);
   if (!res.ok) throw new Error('Failed to load products');
-  return res.json() as Promise<{ items: Array<any> }>;
+  return res.json() as Promise<ListResponse>;
 }
 
 export default async function ProductsPage() {
@@ -21,9 +30,12 @@ export default async function ProductsPage() {
               <img src={p.imageUrl} alt={p.name} className="mt-2 rounded" />
             ) : null}
             <div className="text-sm text-gray-500 mt-1">
-              {p.price ? `${(p.price.amount/100).toFixed(2)} ${p.price.currency}` : 'No price'}
+              {p.price ? `${(p.price.amount / 100).toFixed(2)} ${p.price.currency}` : 'No price'}
             </div>
-            <Link className="text-blue-600" href={`/products/${p.id}`}>View</Link>
+            {/* Link by ID for now to match /api/products/[id] */}
+            <Link className="text-blue-600" href={`/products/${p.id}`}>
+              View
+            </Link>
           </li>
         ))}
       </ul>

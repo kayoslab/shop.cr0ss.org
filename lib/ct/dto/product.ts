@@ -1,10 +1,34 @@
-export function toDTO(p: any, locale: string) {
-  const current = p?.masterData?.current;
-  const name = current?.name?.[locale] ?? current?.name?.['en-GB'] ?? '—';
-  const slug = current?.slug?.[locale] ?? current?.slug?.['en-GB'] ?? p?.id;
+import type { Product } from '@commercetools/platform-sdk';
+
+export interface MoneyDTO {
+  amount: number;
+  currency: string;
+}
+
+export interface ProductDTO {
+  id: string;
+  version: number;
+  name: string;
+  slug: string;
+  imageUrl: string | null;
+  price: MoneyDTO | null;
+}
+
+export function productToDTO(p: Product, locale: string): ProductDTO {
+  const current = p.masterData?.current;
+  const name =
+    (current?.name as Record<string, string> | undefined)?.[locale] ??
+    (current?.name as Record<string, string> | undefined)?.['en-GB'] ??
+    '—';
+
+  const slug =
+    (current?.slug as Record<string, string> | undefined)?.[locale] ??
+    (current?.slug as Record<string, string> | undefined)?.['en-GB'] ??
+    p.id;
+
   const images = current?.masterVariant?.images ?? [];
   const prices = current?.masterVariant?.prices ?? [];
-  const price = prices[0]?.value;
+  const priceVal = prices[0]?.value;
   const imageUrl = images[0]?.url ?? null;
 
   return {
@@ -13,6 +37,8 @@ export function toDTO(p: any, locale: string) {
     name,
     slug,
     imageUrl,
-    price: price ? { amount: price.centAmount, currency: price.currencyCode } : null,
+    price: priceVal
+      ? { amount: priceVal.centAmount, currency: priceVal.currencyCode }
+      : null,
   };
 }

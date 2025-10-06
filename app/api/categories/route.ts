@@ -12,7 +12,7 @@ async function _fetchCategories(locale: string): Promise<CategoryDTO[]> {
 const cachedFetchCategories = (locale: string) =>
   cache(_fetchCategories, ['api-categories', locale], {
     tags: ['categories'],
-    revalidate: 60 * 10, // 10 minutes
+    revalidate: 60 * 10,
   })(locale);
 
 export async function GET(request: NextRequest) {

@@ -45,10 +45,6 @@ export default async function Nav() {
 
           {/* Desktop primary nav */}
           <nav className="hidden md:flex items-center gap-5">
-            <Link href="/" className="text-gray-700 hover:text-black dark:text-gray-300 dark:hover:text-white">
-              Home
-            </Link>
-
             {inline.map((c) => (
               <Link
                 key={c.id}
@@ -96,12 +92,6 @@ export default async function Nav() {
       {/* Mobile category scroller */}
       <div className="md:hidden border-t px-2 py-2 bg-white dark:bg-gray-900">
         <nav className="flex items-center gap-3 overflow-x-auto scrollbar-none">
-          <Link
-            href="/"
-            className="shrink-0 rounded-full border px-3 py-1 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-200 dark:hover:bg-gray-800"
-          >
-            Home
-          </Link>
           {top.map((c) => (
             <Link
               key={c.id}

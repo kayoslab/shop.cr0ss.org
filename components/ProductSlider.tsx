@@ -20,15 +20,16 @@ async function fetchRecommended(limit = 12): Promise<ProductDTO[]> {
   return data.items;
 }
 
-export default async function ProductSlider() {
+export default async function ProductSlider({ heading = 'Recommended' }: { heading?: string }) {
   const items = await fetchRecommended(12);
 
   return (
     <section className="mx-auto max-w-6xl px-6 py-12">
       <div className="mb-6 flex items-baseline justify-between">
-        <h2 className="text-2xl font-semibold">Recommended</h2>
+        <h2 className="text-2xl font-semibold">{heading}</h2>
       </div>
       <ProductStrip items={items} />
     </section>
   );
 }
+

@@ -13,30 +13,47 @@ async function fetchCategories(): Promise<CategoryDTO[]> {
   return data.items;
 }
 
-function topLevel(categories: CategoryDTO[]): CategoryDTO[] {
-  return categories.filter(c => c.parentId === null);
+// Create a list of all categories (flat).
+function flattenCategories(categories: CategoryDTO[]): CategoryDTO[] {
+  const flat: CategoryDTO[] = [];
+  categories.forEach(c => {
+    flat.push(c);
+    if (c.children) {
+      flat.push(...flattenCategories(c.children));
+    }
+  });
+  return flat;
 }
 
-export default async function CategoryTiles() {
-  const cats = topLevel(await fetchCategories()).slice(0, 8);
+export default async function CategoryTiles({
+  heading = 'Shop by Category',
+  featuredSlugs,
+}: {
+  heading?: string;
+  featuredSlugs?: string[];
+}) {
+  const cats = flattenCategories(await fetchCategories());
+
+  const chosen = featuredSlugs && featuredSlugs.length
+    ? cats.filter(c => featuredSlugs.includes(c.slug))
+    : cats.slice(0, 8);
 
   return (
     <section className="mx-auto max-w-6xl px-6 py-12">
       <div className="mb-6 flex items-baseline justify-between">
-        <h2 className="text-2xl font-semibold">Shop by Category</h2>
-        <Link className="text-sm text-blue-600 hover:underline" href="/categories">
+        <h2 className="text-2xl font-semibold">{heading}</h2>
+        <Link className="text-sm text-blue-600 hover:underline" href="/category">
           View all
         </Link>
       </div>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {cats.map((c) => (
+        {chosen.map((c) => (
           <Link
             key={c.id}
             href={`/category/${c.slug}`}
             className="group relative overflow-hidden rounded-xl border bg-white p-5 hover:shadow-lg dark:border-gray-800 dark:bg-gray-950"
           >
-            {/* placeholder art */}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-gray-50 to-white opacity-60 group-hover:opacity-80 dark:from-gray-900 dark:to-gray-950" />
             <div className="relative">
               <div className="h-24 w-full rounded-lg bg-gray-100 dark:bg-gray-900" />

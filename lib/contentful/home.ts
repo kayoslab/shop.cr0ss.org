@@ -1,3 +1,4 @@
+import type { Asset, AssetFile, EntryCollection } from 'contentful';
 import { contentfulClient } from './client';
 import type { HomeDTO } from './dto/home';
 
@@ -11,16 +12,22 @@ type HomeFields = {
         heroSubtitle?: string;
         heroCtaText?: string;
         heroCtaLink?: string;
-        heroImage?: any;
+        heroImage?: Asset;
         featuredCategorySlugs?: string[];
         recommendedHeading?: string;
         showcaseHeading?: string;
     };
 };
 
-function assetUrl(asset: any, locale: string): string | undefined {
-  // Localized field access
-  const file = asset?.fields?.file?.[locale] ?? asset?.fields?.file?.[DEFAULT_LOCALE] ?? asset?.fields?.file;
+function assetUrl(asset: Asset, locale: string): string | undefined {
+  let file: AssetFile | undefined;
+  const fileField = asset?.fields?.file;
+  if (fileField && typeof fileField === 'object' && !('url' in fileField)) {
+    file = (fileField as { [x: string]: AssetFile | undefined })[locale] 
+        ?? (fileField as { [x: string]: AssetFile | undefined })[DEFAULT_LOCALE];
+  } else {
+    file = fileField as AssetFile | undefined;
+  }
   const url = file?.url || file?.['url'];
   if (!url) return undefined;
   return url.startsWith('//') ? `https:${url}` : url;

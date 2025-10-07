@@ -9,8 +9,12 @@ export async function POST(request: NextRequest) {
         return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const topic = request.headers.get('x-contentful-topic') ?? '';
-    revalidateTag(`cms:${topic}`);
+    // Get the body to ensure the request is fully read
+    const body = await request.json();
+    // Get internal name
+    const internalName = body.fields?.internalName?.['en-GB'] || 'unknown';
 
-    return NextResponse.json({ ok: true, revalidated: [`cms:${topic}`] });
+    revalidateTag(`cms:${internalName}`);
+
+    return NextResponse.json({ ok: true, revalidated: [`cms:${internalName}`] });
 }

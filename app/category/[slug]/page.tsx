@@ -39,6 +39,14 @@ function formatPrice(p?: {
   return `${base} ${p.currencyCode}`;
 }
 
+function getPrimaryImage(p: ProductDTO): { url: string; alt: string } | null {
+  const v = p.variants?.[0];
+  const img = v?.images?.[0];
+  if (!img?.url) return null;
+  const url = img.url.startsWith('//') ? `https:${img.url}` : img.url;
+  return { url, alt: p.name };
+}
+
 async function fetchCategoryPLP(slug: string): Promise<ListResponse | null> {
   const h = headers();
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
@@ -48,14 +56,6 @@ async function fetchCategoryPLP(slug: string): Promise<ListResponse | null> {
   if (res.status === 404) return null;
   if (!res.ok) throw new Error('Failed to load category PLP');
   return res.json() as Promise<ListResponse>;
-}
-
-function getPrimaryImage(p: ProductDTO): { url: string; alt: string } | null {
-  const v = p.variants?.[0];
-  const img = v?.images?.[0];
-  if (!img?.url) return null;
-  const url = img.url.startsWith('//') ? `https:${img.url}` : img.url;
-  return { url, alt: p.name };
 }
 
 export default async function CategoryPLP({ params }: { params: { slug: string } }) {
@@ -100,7 +100,7 @@ export default async function CategoryPLP({ params }: { params: { slug: string }
               </Link>
 
               <div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
-                {formatPrice(p.variants?.[0]?.price as any)}
+                {formatPrice(p.variants?.[0]?.price)}
               </div>
 
               <div className="mt-3">

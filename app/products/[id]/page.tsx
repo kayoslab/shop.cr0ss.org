@@ -1,5 +1,4 @@
 import { headers } from 'next/headers';
-import Image from 'next/image';
 import VariantPickerClient from '@/components/pdp/VariantPickerClient';
 import AddToBasketClient from '@/components/pdp/AddToBasketClient';
 

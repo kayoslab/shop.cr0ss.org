@@ -127,7 +127,7 @@ export default function ProductStrip({ items }: { items: ProductDTO[] }) {
               </Link>
 
               <div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
-                {formatPrice(p.variants?.[0]?.price as any)}
+                {formatPrice(p.variants?.[0]?.price)}
               </div>
 
               <Link

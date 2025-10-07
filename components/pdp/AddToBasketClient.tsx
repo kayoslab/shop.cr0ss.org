@@ -63,7 +63,6 @@ export default function AddToBasketClient({ product }: { product: Product }) {
       });
     }
     writeCart(cart);
-    // eslint-disable-next-line no-alert
     alert('Added to basket!');
     setQty(1);
   };

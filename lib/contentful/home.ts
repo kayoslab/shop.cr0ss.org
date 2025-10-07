@@ -1,4 +1,4 @@
-import type { Asset, AssetFile, EntryCollection } from 'contentful';
+import type { Asset, AssetFile } from 'contentful';
 import { contentfulClient } from './client';
 import type { HomeDTO } from './dto/home';
 

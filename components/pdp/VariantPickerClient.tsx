@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type Product = {
   id: string;
@@ -25,7 +25,7 @@ function variantLabel(v: Product['variants'][number]) {
   const summary = interesting
     .map((k) => {
       const val = v.attributes?.[k];
-      if (Array.isArray(val)) return `${k}: ${(val as any[]).join('/')}`;
+      if (Array.isArray(val)) return `${k}: ${(val as string[]).join('/')}`;
       return `${k}: ${String(val)}`;
     })
     .join(', ');

@@ -8,7 +8,8 @@ import {
   appGetCategoryBySlug,
   appListProductsByCategoryId,
 } from '@/lib/ct/categories';
-import { productToDTO, type ProductDTO } from '@/lib/ct/dto/product';
+import { type ProductDTO } from '@/lib/ct/dto/product';
+import { mapProductToDTO } from '@/lib/ct/products';
 
 interface ListResponse {
   categoryId: string;
@@ -37,7 +38,7 @@ async function _fetchCategoryPLP(
     offset,
   });
 
-  const items = (data.results ?? []).map((p) => productToDTO(p, locale));
+  const items = (data.results ?? []).map((p) => mapProductToDTO(p, locale));
 
   return {
     categoryId: category.id,

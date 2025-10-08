@@ -5,7 +5,7 @@ A demo storefront that showcases a **headless**, **composable** e-commerce archi
 ## What this demo shows
 
 - Modern app architecture
-    - Next.js App Router with colocated route handlers (/app/api/*)
+    - Next.js App Router with colocated route handlers (`/app/api/*`)
     - Clean lib separation: `/lib/ct` (commercetools), `/lib/contentful` (CMS), `/lib/*/dto` (UI-safe models)
     - Headless façade (`/api/products`, `/api/categories`,`/api/cms/home`) used by pages/components
 - Personalization at the edge
@@ -13,10 +13,10 @@ A demo storefront that showcases a **headless**, **composable** e-commerce archi
     - Pages can adapt content without sacrificing cacheability (segment-scoped rendering)
 - Performance & caching
     - `unstable_cache` + **cache** tags for surgical revalidation (no blanket purges)
-    - ISR-style 'revalidate' windows where appropriate, `next/image` w/ responsive `sizes` for LCP
+    - ISR-style `revalidate` windows where appropriate, `next/image` w/ responsive `sizes` for LCP
 - Selective freshness via events
     - commercetools Subscriptions → webhook → `revalidateTag('products' | 'product:<id>' | 'categories' | 'plp:cat:<slug>')`
-    - Contentful Webhook → revalidateTag('cms:home') for instant homepage updates
+    - Contentful Webhook → `revalidateTag('cms:home')` for instant homepage updates
 
 ## High-level Architecture
 
@@ -38,12 +38,6 @@ Data Providers
   └─ Contentful (home hero/copy, featured categories, section labels)
 
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Key decisions & trade-offs
 
@@ -143,45 +137,6 @@ Visit `http://localhost:3000`.
 - URL: POST https://<domain>/api/cms/webhook
 - Authorization: Bearer ${CONTENTFUL_WEBHOOK_SECRET}
 - Trigger on publish/unpublish for the homepage content type.
-
-## Folder structure (trimmed)
-
-```
-app/
-  api/
-    products/route.ts
-    products/[id]/route.ts
-    categories/route.ts
-    categories/[slug]/products/route.ts
-    cms/home/route.ts
-    cms/webhook/route.ts
-    ct/webhook/route.ts
-  category/[slug]/page.tsx
-  products/[id]/page.tsx
-  products/page.tsx
-  page.tsx
-components/
-  Hero.tsx
-  CategoryTiles.tsx
-  ProductSlider.tsx
-  ProductStripClient.tsx
-  Nav.tsx
-lib/
-  ct/
-    client.ts
-    appClient.ts
-    queries.ts
-    categories.ts
-    dto/
-      product.ts
-      category.ts
-  contentful/
-    client.ts
-    home.ts
-    dto/
-      home.ts
-middleware.ts
-```
 
 ## Known limitations / next steps
 - **Cart & checkout:** stub only (intentionally out of scope for demo).

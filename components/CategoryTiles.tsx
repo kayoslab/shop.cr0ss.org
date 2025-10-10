@@ -24,7 +24,7 @@ export function CategoryTiles({
               <Card className="overflow-hidden rounded-2xl border-border hover:shadow-lg transition-shadow">
                 <div className="relative h-48 overflow-hidden">
                   <Image
-                    src={/*category.image ||*/ "/placeholder.svg?height=200&width=400"}
+                    src={category.content?.imageUrl || "/placeholder.svg?height=200&width=400"}
                     alt={category.name}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -33,7 +33,7 @@ export function CategoryTiles({
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-lg">{category.name}</h3>
-                  {<p className="text-sm text-muted-foreground mt-1">{"Lorem Ipsum"}</p>}
+                  {<p className="text-sm text-muted-foreground mt-1">{category.content?.excerpt}</p>}
                 </div>
               </Card>
             </Link>

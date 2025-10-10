@@ -6,6 +6,11 @@ export interface CategoryDTO {
   slug: string;
   parentId: string | null;
   children: CategoryDTO[];
+  content?: {
+    excerpt?: string;
+    description?: string;
+    imageUrl?: string;
+  };
 }
 
 export function categoryRecordToDTO(c: Category, locale: string): Omit<CategoryDTO, 'children'> {

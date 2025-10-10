@@ -4,6 +4,7 @@ import ProductSlider from '@/components/ProductSlider';
 import { CategoryTiles } from '@/components/CategoryTiles';
 import type { ProductDTO } from '@/lib/ct/dto/product';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
+import { fetchCategoryContentFromCMS } from '@/lib/contentful/category';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,7 +68,22 @@ async function fetchCategories(featuredSlugs?: string[], sliced: number = 4): Pr
     ? flat.filter(c => featuredSlugs.includes(c.slug))
     : flat.slice(0, sliced);
 
-  return chosen;
+  // Enrich categories with content from CMS
+  const enriched: CategoryDTO[] = [];
+  for (const c of chosen) {
+    // Fetch category content from CMS to enrich the category data
+    await fetchCategoryContentFromCMS(c.slug).then(content => {
+      if (content) {
+        console.log(`Enriched category ${c.slug} with CMS content`);
+        console.log(content);
+        c.content = content;
+      }
+      enriched.push(c);
+    }).catch(() => {
+      // Ignore errors and keep existing category data
+    });
+  };
+  return enriched;
 }
 
 export default async function HomePage() {

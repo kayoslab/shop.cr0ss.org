@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     // Get the body to ensure the request is fully read
     const body = await request.json();
     // Get content type from the webhook payload
-    const contentType = body.sys?.contentType?.id || 'unknown';
+    const contentType = body.sys?.contentType?.sys?.id || 'unknown';
     // Revalidate the relevant tag
     revalidateTag(`cms:${contentType}`);
 

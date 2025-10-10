@@ -11,10 +11,10 @@ export async function POST(request: NextRequest) {
 
     // Get the body to ensure the request is fully read
     const body = await request.json();
-    // Get internal name
-    const internalName = body.fields?.internalName?.['en-GB'] || 'unknown';
+    // Get content type from the webhook payload
+    const contentType = body.sys?.contentType?.id || 'unknown';
+    // Revalidate the relevant tag
+    revalidateTag(`cms:${contentType}`);
 
-    revalidateTag(`cms:${internalName}`);
-
-    return NextResponse.json({ ok: true, revalidated: [`cms:${internalName}`] });
+    return NextResponse.json({ ok: true, revalidated: [`cms:${contentType}`] });
 }

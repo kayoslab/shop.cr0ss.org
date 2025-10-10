@@ -9,9 +9,9 @@ async function _fetchHome(locale: string, preview: boolean): Promise<HomeDTO | n
 
 const cachedFetchHome = cache(
     (locale: string, preview: boolean) => _fetchHome(locale, preview),
-    ['api-cms-home'],
+    ['api-cms-homepage'],
     { 
-        tags: ['cms:home'],
+        tags: ['cms:homepage'],
         revalidate: 60 * 5 
     }
 );

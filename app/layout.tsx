@@ -3,12 +3,18 @@ import Nav from '@/components/Nav';
 import { headers } from 'next/headers';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
 
+export const revalidate = 3600;
+
 async function fetchCategories(): Promise<CategoryDTO[]> {
   const h = headers();
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  const res = await fetch(`${base}/api/categories`, { next: { tags: ['categories'] } });
+  
+  const res = await fetch(`${base}/api/categories`, {
+    next: { revalidate, tags: ['categories'] },
+  });
+
   if (!res.ok) return [];
   const data = (await res.json()) as { items: CategoryDTO[] };
   return data.items;

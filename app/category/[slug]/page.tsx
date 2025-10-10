@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import type { ProductDTO } from '@/lib/ct/dto/product';
 import { ProductCard } from '@/components/ProductCard';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 600;
 
 interface ListResponse {
   categoryId: string;
@@ -19,7 +19,14 @@ async function fetchCategoryPLP(slug: string): Promise<ListResponse | null> {
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  const res = await fetch(`${base}/api/categories/${slug}/products`);
+  
+  const res = await fetch(`${base}/api/categories/${slug}/products`, {
+    next: { 
+      revalidate, 
+      tags: [`plp:cat:${slug}`] 
+    },
+  });
+
   if (res.status === 404) return null;
   if (!res.ok) throw new Error('Failed to load category PLP');
   return res.json() as Promise<ListResponse>;

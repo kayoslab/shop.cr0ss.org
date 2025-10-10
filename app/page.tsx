@@ -6,8 +6,7 @@ import type { ProductDTO } from '@/lib/ct/dto/product';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
 import type { CategoryCMSContentDTO } from '@/app/api/cms/home/categories/[slug]/route';
 
-
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 async function fetchHome(): Promise<import('@/lib/contentful/dto/home').HomeDTO | null> {
   const h = headers();
@@ -18,8 +17,12 @@ async function fetchHome(): Promise<import('@/lib/contentful/dto/home').HomeDTO 
 
   const res = await fetch(`${base}/api/cms/home`, {
     headers: { 'x-preview': preview },
-    next: { tags: ['cms:home'] },
+    next: { 
+      revalidate,
+      tags: ['cms:home'] 
+    },
   });
+  
   if (!res.ok) return null;
   return res.json();
 }

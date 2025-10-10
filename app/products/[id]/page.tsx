@@ -2,6 +2,9 @@ import { headers } from 'next/headers';
 import VariantPickerClient from '@/components/pdp/VariantPickerClient';
 import AddToBasketClient from '@/components/pdp/AddToBasketClient';
 
+export const runtime = 'edge';
+export const revalidate = 0;
+
 type Money = { currencyCode: string; centAmount: number };
 
 function formatMoney(m?: Money, discounted?: Money) {
@@ -25,7 +28,9 @@ async function fetchProduct(id: string) {
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  const res = await fetch(`${base}/api/products/${id}`, { next: { tags: [`product:${id}`, 'products'] } });
+  
+  const res = await fetch(`${base}/api/products/${id}`, { cache: 'no-store' });
+  
   if (!res.ok) return null;
   return res.json() as Promise<{
     id: string;

@@ -13,6 +13,7 @@
     "@commercetools/sdk-client-v2": "^3.0.0",
     "@commercetools/sdk-middleware-auth": "^8.0.1",
     "@commercetools/sdk-middleware-http": "^8.0.1",
+    "@vercel/analytics": "^1.5.0",
     "@vercel/kv": "^3.0.0",
     "clsx": "^2.1.1",
     "contentful": "^11.8.4",

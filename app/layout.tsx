@@ -1,4 +1,5 @@
 import './globals.css';
+import { Analytics } from "@vercel/analytics/next"
 import Nav from '@/components/Nav';
 import { headers } from 'next/headers';
 import type { CategoryDTO } from '@/lib/ct/dto/category';

@@ -44,15 +44,11 @@ export async function fetchCategoryContentFromCMS(
 
   const res = await cf.getEntries<CategoryFields>(tempVar);
 
-  console.log('Contentful category fetch result:', res);
-
   if (!res.items?.length) return null;
   const entry = res.items[0];
   const f = entry.fields || {};
-
   const heroImageUrl = f.imageUrl ? assetUrl(f.imageUrl, locale) : undefined;
 
-  console.log('Fetched category content:', { slug, locale, preview, entry, heroImageUrl });
   return {
     slug: f.slug ?? 'category',
     excerpt: f.excerpt ?? 'Exciting new products.',

@@ -74,8 +74,6 @@ async function fetchCategories(featuredSlugs?: string[], sliced: number = 4): Pr
     // Fetch category content from CMS to enrich the category data
     await fetchCategoryContentFromCMS(c.slug).then(content => {
       if (content) {
-        console.log(`Enriched category ${c.slug} with CMS content`);
-        console.log(content);
         c.content = content;
       }
       enriched.push(c);

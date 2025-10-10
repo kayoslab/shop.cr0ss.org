@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import type { ProductDTO } from '@/lib/ct/dto/product';
+import { ProductCard } from '@/components/ProductCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,44 +74,9 @@ export default async function CategoryPLP({ params }: { params: { slug: string }
 
       <ul className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         {data.items.map((p) => {
-          const img = getPrimaryImage(p);
           return (
-            <li
-              key={p.id}
-              className="rounded-xl border bg-white p-3 shadow-sm transition hover:shadow-md dark:border-gray-800 dark:bg-gray-950"
-            >
-              <Link href={`/products/${p.id}`} className="block">
-                {/* Image wrapper with inner padded layer; object-contain prevents cropping */}
-                <div className="relative mb-3 aspect-[4/5] w-full overflow-hidden rounded-lg border bg-white dark:border-gray-800 dark:bg-gray-900">
-                  <div className="absolute inset-0 p-3">
-                    {img && (
-                      <Image
-                        src={img.url}
-                        alt={img.alt}
-                        fill
-                        className="object-contain"
-                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        priority={false}
-                      />
-                    )}
-                  </div>
-                </div>
-
-                <div className="line-clamp-2 min-h-[2.5rem] text-sm font-medium">{p.name}</div>
-              </Link>
-
-              <div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
-                {formatPrice(p.variants?.[0]?.price)}
-              </div>
-
-              <div className="mt-3">
-                <Link
-                  href={`/products/${p.id}`}
-                  className="inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-medium hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-900"
-                >
-                  View details
-                </Link>
-              </div>
+            <li key={p.id}>
+              <ProductCard product={p} compact={false} />
             </li>
           );
         })}

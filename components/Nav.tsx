@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { headers } from 'next/headers';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
 
 function BasketIcon({ className }: { className?: string }) {
@@ -11,28 +10,11 @@ function BasketIcon({ className }: { className?: string }) {
   );
 }
 
-async function fetchCategories(): Promise<CategoryDTO[]> {
-  const h = headers();
-  const proto = (await h).get('x-forwarded-proto') ?? 'http';
-  const host = (await h).get('host');
-  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  const res = await fetch(`${base}/api/categories`, { next: { tags: ['categories'] } });
-  if (!res.ok) return [];
-  const data = (await res.json()) as { items: CategoryDTO[] };
-  return data.items;
-}
-
-function topLevel(categories: CategoryDTO[]): CategoryDTO[] {
-  return categories.filter(c => c.parentId === null);
-}
-
-export default async function Nav() {
-  const top = topLevel(await fetchCategories());
-
+export default async function Nav({ topLevel }: { topLevel: CategoryDTO[] }) {
   // Show first N inline; rest go into "More"
   const MAX_INLINE = 6;
-  const inline = top.slice(0, MAX_INLINE);
-  const overflow = top.slice(MAX_INLINE);
+  const inline = topLevel.slice(0, MAX_INLINE);
+  const overflow = topLevel.slice(MAX_INLINE);
 
   return (
     <header className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur dark:bg-gray-900/80">
@@ -92,7 +74,7 @@ export default async function Nav() {
       {/* Mobile category scroller */}
       <div className="md:hidden border-t px-2 py-2 bg-white dark:bg-gray-900">
         <nav className="flex items-center gap-3 overflow-x-auto scrollbar-none">
-          {top.map((c) => (
+          {topLevel.map((c) => (
             <Link
               key={c.id}
               href={`/category/${c.slug}`}

@@ -1,68 +1,45 @@
 import Link from 'next/link';
-import { headers } from 'next/headers';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
+import Image from 'next/image';
+import { Card } from '@/components/card';
 
-async function fetchCategories(): Promise<CategoryDTO[]> {
-  const h = headers();
-  const proto = (await h).get('x-forwarded-proto') ?? 'http';
-  const host = (await h).get('host');
-  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  const res = await fetch(`${base}/api/categories`, { next: { tags: ['categories'] } });
-  if (!res.ok) return [];
-  const data = (await res.json()) as { items: CategoryDTO[] };
-  return data.items;
-}
-
-// Create a list of all categories (flat).
-function flattenCategories(categories: CategoryDTO[]): CategoryDTO[] {
-  const flat: CategoryDTO[] = [];
-  categories.forEach(c => {
-    flat.push(c);
-    if (c.children) {
-      flat.push(...flattenCategories(c.children));
-    }
-  });
-  return flat;
-}
-
-export default async function CategoryTiles({
+export function CategoryTiles({
   heading = 'Shop by Category',
-  featuredSlugs,
+  categories,
 }: {
   heading?: string;
-  featuredSlugs?: string[];
+  categories: CategoryDTO[];
 }) {
-  const cats = flattenCategories(await fetchCategories());
-
-  const chosen = featuredSlugs && featuredSlugs.length
-    ? cats.filter(c => featuredSlugs.includes(c.slug))
-    : cats.slice(0, 8);
-
   return (
-    <section className="mx-auto max-w-6xl px-6 py-12">
-      <div className="mb-6 flex items-baseline justify-between">
-        <h2 className="text-2xl font-semibold">{heading}</h2>
-        <Link className="text-sm text-blue-600 hover:underline" href="/category">
-          View all
-        </Link>
-      </div>
+    <section className="py-16 bg-background">
+      <div className="container mx-auto px-4">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold tracking-tight">{heading}</h2>
+          <Link className="text-muted-foreground mt-2 hover:underline" href="/category">View all</Link>
+        </div>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {chosen.map((c) => (
-          <Link
-            key={c.id}
-            href={`/category/${c.slug}`}
-            className="group relative overflow-hidden rounded-xl border bg-white p-5 hover:shadow-lg dark:border-gray-800 dark:bg-gray-950"
-          >
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-gray-50 to-white opacity-60 group-hover:opacity-80 dark:from-gray-900 dark:to-gray-950" />
-            <div className="relative">
-              <div className="h-24 w-full rounded-lg bg-gray-100 dark:bg-gray-900" />
-              <div className="mt-3 text-base font-medium">{c.name}</div>
-              <div className="text-xs text-gray-500">Explore</div>
-            </div>
-          </Link>
-        ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {categories.map((category) => (
+            <Link key={category.id} href={`/category/${category.slug}`} className="group">
+              <Card className="overflow-hidden rounded-2xl border-border hover:shadow-lg transition-shadow">
+                <div className="relative h-48 overflow-hidden">
+                  <Image
+                    src={/*category.image ||*/ "/placeholder.svg?height=200&width=400"}
+                    alt={category.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  />
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg">{category.name}</h3>
+                  {<p className="text-sm text-muted-foreground mt-1">{"Lorem Ipsum"}</p>}
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
       </div>
     </section>
-  );
+  )
 }

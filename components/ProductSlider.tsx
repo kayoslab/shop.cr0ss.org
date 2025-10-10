@@ -1,34 +1,20 @@
-import { headers } from 'next/headers';
-import type { ProductDTO } from '@/lib/ct/dto/product';
-import ProductStrip from './ProductStripClient';
+import { type ProductDTO } from '@/lib/ct/dto/product';
+import { ProductCard } from './ProductCard';
 
-interface ListResponse {
-  items: ProductDTO[];
-  total: number;
-  limit: number;
-  offset: number;
-}
-
-async function fetchRecommended(limit = 12): Promise<ProductDTO[]> {
-  const h = headers();
-  const proto = (await h).get('x-forwarded-proto') ?? 'http';
-  const host = (await h).get('host');
-  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  const res = await fetch(`${base}/api/products?limit=${limit}`, { next: { tags: ['products'] } });
-  if (!res.ok) return [];
-  const data = (await res.json()) as ListResponse;
-  return data.items;
-}
-
-export default async function ProductSlider({ heading = 'Recommended' }: { heading?: string }) {
-  const items = await fetchRecommended(12);
-
+export default async function ProductSlider({items, heading = 'Recommended' }: { items: ProductDTO[]; heading?: string }) {
   return (
-    <section className="mx-auto max-w-6xl px-6 py-12">
-      <div className="mb-6 flex items-baseline justify-between">
-        <h2 className="text-2xl font-semibold">{heading}</h2>
+    <section className="py-16 bg-muted/30">
+      <div className="container mx-auto px-4">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold tracking-tight">{heading}</h2>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {items.map((product) => (
+            <ProductCard key={product.id} product={product} compact />
+          ))}
+        </div>
       </div>
-      <ProductStrip items={items} />
     </section>
   );
 }

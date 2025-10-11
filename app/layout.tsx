@@ -33,6 +33,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
         <Nav topLevel={top} />
         {children}
+        <Analytics />
       </body>
     </html>
   );

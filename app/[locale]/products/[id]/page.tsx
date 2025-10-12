@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import VariantPickerClient from '@/components/pdp/VariantPickerClient';
 import AddToBasketClient from '@/components/pdp/AddToBasketClient';
+import ProductGalleryClient from '@/components/pdp/ProductGalleryClient';
 import type { ProductProjectionDTO } from '@/lib/ct/dto/product';
 import { SupportedLocale, localeToCountry, localeToCurrency, SUPPORTED_LOCALES } from '@/lib/i18n/locales';
 
@@ -90,29 +91,8 @@ export default async function ProductDetailPage({
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
       <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
-        {/* Gallery */}
         <div>
-          <div className="relative aspect-square w-full overflow-hidden rounded-2xl border bg-white dark:border-gray-800 dark:bg-gray-950">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={gallery[0].url}
-              alt={gallery[0].alt || product.name}
-              className="h-full w-full object-contain p-4"
-            />
-          </div>
-          {gallery.length > 1 && (
-            <div className="mt-3 grid grid-cols-4 gap-3">
-              {gallery.slice(1, 5).map((img, i) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={i}
-                  src={img.url}
-                  alt={img.alt || `${product.name} thumbnail ${i + 2}`}
-                  className="h-24 w-full rounded-xl border object-contain p-2 dark:border-gray-800"
-                />
-              ))}
-            </div>
-          )}
+          <ProductGalleryClient images={gallery} productName={product.name} />
         </div>
 
         {/* Details */}

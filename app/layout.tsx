@@ -4,17 +4,23 @@ import Nav from '@/components/Nav';
 import { cookies, headers } from 'next/headers';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-async function fetchCategories(): Promise<CategoryDTO[]> {
+async function fetchCategories(locale: 'de-DE' | 'en-GB'): Promise<CategoryDTO[]> {
   const h = headers();
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
-  const host = (await h).get('host');
-  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
+  const host  = (await h).get('host');
+  const base  = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : 'http://localhost:3000');
   const cookie = (await h).get('cookie') ?? '';
+
   const res = await fetch(`${base}/api/categories`, {
-    next: { revalidate, tags: ['categories'] },
-    headers: { cookie },
+    // cache: 'no-store',
+    next: { revalidate: 3600, tags: ['categories', locale] },
+    headers: {
+      cookie,
+      'x-locale': locale,
+    },
   });
 
   if (!res.ok) return [];
@@ -26,11 +32,11 @@ function topLevel(categories: CategoryDTO[]): CategoryDTO[] {
   return categories.filter(c => c.parentId === null);
 }
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const top = topLevel(await fetchCategories());
-  
+export default async function RootLayout({ children }: { children: React.ReactNode }) {  
   const c = cookies();
-  const cookieLocale = ((await c).get('locale')?.value as 'de-DE' | 'en-GB' | undefined) ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB';
+  const cookieLocale = ((await c).get('locale')?.value ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB') as 'de-DE' | 'en-GB';
+  const categories = await fetchCategories(cookieLocale);
+  const top = topLevel(categories);
 
   return (
     <html lang={cookieLocale} className="h-full">

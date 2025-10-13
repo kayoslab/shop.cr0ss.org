@@ -25,6 +25,7 @@ export default function LangSwitcher({ current }: { current: SupportedLocale }) 
       setOpen(false);
       return;
     }
+    
     await fetch('/api/locale', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

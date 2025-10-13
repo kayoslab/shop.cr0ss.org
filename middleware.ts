@@ -13,9 +13,15 @@ function normalizeLocaleTag(tag: string): string {
   return region ? `${lang.toLowerCase()}-${region.toUpperCase()}` : lang.toLowerCase();
 }
 
-function parseAcceptLanguage(header: string): Array<{ tag: string; q: number; index: number }> {
+function parseAcceptLanguage(languageHeader: string): Array<{ tag: string; q: number; index: number }> {
+  // Handle wildcard: accept any, prefer default and fallback
+  if (languageHeader == '*') return [
+    { tag: process.env.DEMO_DEFAULT_LOCALE ?? 'de-DE', q: 1.0, index: 0 },
+    { tag: process.env.FALLBACK_LOCALE ?? 'en-GB', q: 0.9, index: 0 }
+  ];
+
   // e.g. "de-AT,de;q=0.9,en-GB;q=0.8,en;q=0.7"
-  return header
+  return languageHeader
     .split(',')
     .map((part, index) => {
       const [rawTag, ...params] = part.trim().split(';');
@@ -71,7 +77,7 @@ export default function middleware(req: NextRequest) {
       path: '/',
       maxAge: 60 * 60 * 24 * 365,
       sameSite: 'lax',
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       httpOnly: false,
     });
   }
@@ -91,7 +97,7 @@ export default function middleware(req: NextRequest) {
       path: '/',
       maxAge: 60 * 60 * 24 * 30,
       sameSite: 'lax',
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       httpOnly: false,
     });
   }

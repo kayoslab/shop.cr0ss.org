@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { unstable_cache as cache } from 'next/cache';
 import { fetchCategoryContentFromCMS } from '@/lib/contentful/category';
+import { cookies } from 'next/dist/server/request/cookies';
 
 export interface CategoryCMSContentDTO {
     slug: string;
@@ -27,19 +28,21 @@ export async function GET(
   context: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await context.params;
-  const locale = request.headers.get('x-locale') ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB';
+  const c = cookies();
+  const cookieLocale = ((await c).get('locale')?.value as 'de-DE' | 'en-GB' | undefined) ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB';
+
   const previewHeader = request.headers.get('x-preview') === '1';
   const previewEnv = (process.env.CONTENTFUL_PREVIEW_ENABLED || 'false').trim() === 'true';
   const preview = previewHeader && previewEnv;
 
-  const data = await cachedFetchCategory(slug, locale, preview);
+  const data = await cachedFetchCategory(slug, cookieLocale, preview);
   if (!data) return new NextResponse('Not found', { status: 404 });
 
   return NextResponse.json(data, {
     headers: {
       // 'Cache-Control': 'no-store', // safest for immediate freshness
       // or keep it very short if you want some CDN caching:
-      'Cache-Control': 'public, max-age=0, s-maxage=0, stale-while-revalidate=0',
+      'Cache-Control': 'no-store' // 'public, max-age=0, s-maxage=0, stale-while-revalidate=0',
     },
   });
 }

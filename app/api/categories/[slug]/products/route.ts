@@ -10,6 +10,7 @@ import {
 } from '@/lib/ct/categories';
 import { type ProductDTO } from '@/lib/ct/dto/product';
 import { mapProductToDTO } from '@/lib/ct/products';
+import { cookies } from 'next/dist/server/request/cookies';
 
 interface ListResponse {
   categoryId: string;
@@ -61,10 +62,12 @@ export async function GET(
   context: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await context.params;
-  const locale = request.headers.get('x-locale') ?? process.env.DEMO_DEFAULT_LOCALE ?? 'de-DE';
+  
+  const c = cookies();
+  const cookieLocale = ((await c).get('locale')?.value as 'de-DE' | 'en-GB' | undefined) ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB';
 
   const url = new URL(request.url);
-  const data = await cachedFetchCategoryPLP(slug, locale, url.searchParams.toString());
+  const data = await cachedFetchCategoryPLP(slug, cookieLocale, url.searchParams.toString());
 
   if (!data) return new NextResponse('Not found', { status: 404 });
 

@@ -17,7 +17,13 @@ async function fetchProducts(): Promise<ListResponse | null> {
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  const res = await fetch(`${base}/api/products`);
+  const cookie = (await h).get('cookie') ?? '';
+  const res = await fetch(`${base}/api/products`, 
+    { 
+      headers: { cookie },
+      // next: { tags: ['products'] },
+    }
+  );
   if (res.status === 404) return null;
   if (!res.ok) throw new Error('Failed to load products');
   return res.json() as Promise<ListResponse>;

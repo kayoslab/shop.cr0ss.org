@@ -28,8 +28,14 @@ async function fetchProduct(id: string) {
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  
-  const res = await fetch(`${base}/api/products/${id}`, { cache: 'no-store' });
+  const cookie = (await h).get('cookie') ?? '';
+  const res = await fetch(`${base}/api/products/${id}`, 
+    { 
+      cache: 'no-store',
+      headers: { cookie },
+      // next: { revalidate, tags: ['products'] },
+    }
+  );
   
   if (!res.ok) return null;
   return res.json() as Promise<{

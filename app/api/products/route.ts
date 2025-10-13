@@ -3,6 +3,7 @@ import { unstable_cache as cache } from 'next/cache';
 import type { ProductPagedQueryResponse } from '@commercetools/platform-sdk';
 import { getProducts, mapProductToDTO } from '@/lib/ct/products';
 import { type ProductDTO } from '@/lib/ct/dto/product';
+import { cookies } from 'next/dist/server/request/cookies';
 
 interface ListResponse {
   items: ProductDTO[];
@@ -30,9 +31,11 @@ const cachedFetchProducts = (qsString: string, locale: string) =>
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
-  const locale = request.headers.get('x-locale') ?? process.env.DEMO_DEFAULT_LOCALE ?? 'de-DE';
+  
+  const c = cookies();
+  const cookieLocale = ((await c).get('locale')?.value as 'de-DE' | 'en-GB' | undefined) ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB';
 
-  const data = await cachedFetchProducts(url.searchParams.toString(), locale);
+  const data = await cachedFetchProducts(url.searchParams.toString(), cookieLocale);
   return NextResponse.json(data, {
     headers: {
       'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=60',

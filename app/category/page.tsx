@@ -6,7 +6,13 @@ async function fetchCategories(): Promise<CategoryDTO[]> {
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  const res = await fetch(`${base}/api/categories`, { next: { tags: ['categories'] } });
+  const cookie = (await h).get('cookie') ?? '';
+  const res = await fetch(`${base}/api/categories`, 
+    { 
+      next: { tags: ['categories'] }, 
+      headers: { cookie },
+    }
+  );
   if (!res.ok) return [];
   const data = (await res.json()) as { items: CategoryDTO[] };
   return data.items;

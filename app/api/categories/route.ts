@@ -3,6 +3,7 @@ import { unstable_cache as cache } from 'next/cache';
 import type { Category } from '@commercetools/platform-sdk';
 import { appListCategories, buildCategoryTree } from '@/lib/ct/categories';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
+import { cookies } from 'next/dist/server/request/cookies';
 
 async function _fetchCategories(locale: string): Promise<CategoryDTO[]> {
   const list: Category[] = await appListCategories(200);
@@ -16,8 +17,10 @@ const cachedFetchCategories = (locale: string) =>
   })(locale);
 
 export async function GET(request: NextRequest) {
-  const locale = request.headers.get('x-locale') ?? process.env.DEMO_DEFAULT_LOCALE ?? 'de-DE';
-  const data = await cachedFetchCategories(locale);
+  const c = cookies();
+  const cookieLocale = ((await c).get('locale')?.value as 'de-DE' | 'en-GB' | undefined) ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB';
+  
+  const data = await cachedFetchCategories(cookieLocale);
 
   return NextResponse.json(
     { items: data },

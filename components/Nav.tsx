@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
+import LangSwitcher from '@/components/lang-switcher';
 
 function BasketIcon({ className }: { className?: string }) {
   return (
@@ -11,10 +13,12 @@ function BasketIcon({ className }: { className?: string }) {
 }
 
 export default async function Nav({ topLevel }: { topLevel: CategoryDTO[] }) {
-  // Show first N inline; rest go into "More"
   const MAX_INLINE = 6;
   const inline = topLevel.slice(0, MAX_INLINE);
   const overflow = topLevel.slice(MAX_INLINE);
+
+  const c = cookies();
+  const cookieLocale = ((await c).get('locale')?.value as 'de-DE' | 'en-GB' | undefined) ?? 'en-GB';
 
   return (
     <header className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur dark:bg-gray-900/80">
@@ -26,7 +30,7 @@ export default async function Nav({ topLevel }: { topLevel: CategoryDTO[] }) {
           </Link>
 
           {/* Desktop primary nav */}
-          <nav className="hidden md:flex items-center gap-5">
+          <nav className="hidden items-center gap-5 md:flex">
             {inline.map((c) => (
               <Link
                 key={c.id}
@@ -36,15 +40,14 @@ export default async function Nav({ topLevel }: { topLevel: CategoryDTO[] }) {
                 {c.name}
               </Link>
             ))}
-
             {overflow.length > 0 && (
-              <div className="relative group">
+              <div className="group relative">
                 <button className="text-gray-700 hover:text-black dark:text-gray-300 dark:hover:text-white">
                   More
                 </button>
-                <div className="invisible absolute left-0 mt-2 min-w-[16rem] rounded-xl border bg-white p-3 shadow-xl opacity-0 transition-all group-hover:visible group-hover:opacity-100 dark:border-gray-800 dark:bg-gray-900">
+                <div className="invisible absolute left-0 mt-2 min-w-[16rem] rounded-xl border bg-white p-3 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100 dark:border-gray-800 dark:bg-gray-900">
                   <ul className="space-y-1">
-                    {overflow.map(c => (
+                    {overflow.map((c) => (
                       <li key={c.id}>
                         <Link
                           href={`/category/${c.slug}`}
@@ -61,18 +64,21 @@ export default async function Nav({ topLevel }: { topLevel: CategoryDTO[] }) {
           </nav>
         </div>
 
-        {/* Right: Basket */}
+        {/* Right: Language + Basket */}
         <div className="flex items-center gap-4">
+          <LangSwitcher current={cookieLocale === 'de-DE' ? 'de-DE' : 'en-GB'} />
           <Link href="/cart" className="relative inline-flex items-center">
             <BasketIcon className="h-6 w-6 text-gray-700 dark:text-gray-300" />
-            {/* Replace with real count later */}
             <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">0</span>
           </Link>
         </div>
       </div>
 
       {/* Mobile category scroller */}
-      <div className="md:hidden border-t px-2 py-2 bg-white dark:bg-gray-900">
+      <div className="border-t bg-white px-2 py-2 dark:bg-gray-900 md:hidden">
+        <div className="mb-2 flex justify-end">
+          <LangSwitcher current={cookieLocale === 'de-DE' ? 'de-DE' : 'en-GB'} />
+        </div>
         <nav className="flex items-center gap-3 overflow-x-auto scrollbar-none">
           {topLevel.map((c) => (
             <Link

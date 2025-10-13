@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import type { Product } from '@commercetools/platform-sdk';
 import { getProductById, mapProductToDTO } from '@/lib/ct/products';
 import { type ProductDTO } from '@/lib/ct/dto/product';
+import { cookies } from 'next/dist/server/request/cookies';
 
 async function _fetchProduct(id: string, locale: string): Promise<ProductDTO | null> {
   const p: Product | undefined = await getProductById(id).catch(() => undefined);
@@ -14,9 +15,11 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
-  const locale = request.headers.get('x-locale') ?? process.env.DEMO_DEFAULT_LOCALE ?? 'de-DE';
+  
+  const c = cookies();
+  const cookieLocale = ((await c).get('locale')?.value as 'de-DE' | 'en-GB' | undefined) ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB';
 
-  const data = await _fetchProduct(id, locale);
+  const data = await _fetchProduct(id, cookieLocale);
   if (!data) return new NextResponse('Not found', { status: 404 });
 
   return NextResponse.json(data, {

@@ -16,10 +16,8 @@ export default async function Nav({ topLevel }: { topLevel: CategoryDTO[] }) {
   const MAX_INLINE = 6;
   const inline = topLevel.slice(0, MAX_INLINE);
   const overflow = topLevel.slice(MAX_INLINE);
-
   const c = cookies();
-  const cookieLocale = ((await c).get('locale')?.value as 'de-DE' | 'en-GB' | undefined) ?? 'en-GB';
-
+  const cookieLocale = ((await c).get('locale')?.value ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB') as 'de-DE' | 'en-GB';
   return (
     <header className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur dark:bg-gray-900/80">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">

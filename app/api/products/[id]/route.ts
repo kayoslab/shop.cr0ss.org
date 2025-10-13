@@ -15,10 +15,8 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
-  
   const c = cookies();
-  const cookieLocale = ((await c).get('locale')?.value as 'de-DE' | 'en-GB' | undefined) ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB';
-
+  const cookieLocale = ((await c).get('locale')?.value ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB') as 'de-DE' | 'en-GB';
   const data = await _fetchProduct(id, cookieLocale);
   if (!data) return new NextResponse('Not found', { status: 404 });
 

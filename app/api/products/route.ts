@@ -33,8 +33,7 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   
   const c = cookies();
-  const cookieLocale = ((await c).get('locale')?.value as 'de-DE' | 'en-GB' | undefined) ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB';
-
+  const cookieLocale = ((await c).get('locale')?.value ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB') as 'de-DE' | 'en-GB';
   const data = await cachedFetchProducts(url.searchParams.toString(), cookieLocale);
   return NextResponse.json(data, {
     headers: {

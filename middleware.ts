@@ -82,7 +82,7 @@ export default function middleware(req: NextRequest) {
     });
   }
 
-  const cookieLocale = req.cookies.get('locale')?.value as SupportedLocale | undefined;
+  const cookieLocale = (req.cookies.get('locale')?.value ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB') as 'de-DE' | 'en-GB';
   let locale: SupportedLocale;
 
   if (cookieLocale && SUPPORTED.includes(cookieLocale)) {

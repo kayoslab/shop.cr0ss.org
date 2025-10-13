@@ -15,8 +15,8 @@ async function fetchCategories(locale: 'de-DE' | 'en-GB'): Promise<CategoryDTO[]
   const cookie = (await h).get('cookie') ?? '';
 
   const res = await fetch(`${base}/api/categories`, {
-    // cache: 'no-store',
-    next: { revalidate: 3600, tags: ['categories', locale] },
+    cache: 'no-store',
+    // next: { revalidate: 3600, tags: ['categories', locale] },
     headers: {
       cookie,
       'x-locale': locale,

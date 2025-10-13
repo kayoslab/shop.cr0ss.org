@@ -64,7 +64,7 @@ export async function GET(
   const { slug } = await context.params;
   
   const c = cookies();
-  const cookieLocale = ((await c).get('locale')?.value as 'de-DE' | 'en-GB' | undefined) ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB';
+  const cookieLocale = ((await c).get('locale')?.value ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB') as 'de-DE' | 'en-GB';
 
   const url = new URL(request.url);
   const data = await cachedFetchCategoryPLP(slug, cookieLocale, url.searchParams.toString());

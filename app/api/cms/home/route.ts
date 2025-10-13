@@ -19,7 +19,7 @@ const cachedFetchHome = cache(
 
 export async function GET(req: NextRequest) {
   const c = cookies();
-  const cookieLocale = ((await c).get('locale')?.value as 'de-DE' | 'en-GB' | undefined) ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB';
+  const cookieLocale = ((await c).get('locale')?.value ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB') as 'de-DE' | 'en-GB';
   const previewHeader = req.headers.get('x-preview') === '1';
   const previewEnv = (process.env.CONTENTFUL_PREVIEW_ENABLED || 'false').trim() === 'true';
   const preview = previewHeader && previewEnv;

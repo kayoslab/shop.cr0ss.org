@@ -1,4 +1,4 @@
-import type { Category, CategoryPagedQueryResponse, ProductPagedQueryResponse } from '@commercetools/platform-sdk';
+import type { Category, CategoryPagedQueryResponse, ProductProjectionPagedQueryResponse } from '@commercetools/platform-sdk';
 import { apiRootApp } from './client';
 import { categoryRecordToDTO, type CategoryDTO } from './dto/category';
 
@@ -31,14 +31,14 @@ export async function appListProductsByCategoryId(params: {
   offset?: number;
 }) {
   const { categoryId, limit = 12, offset = 0 } = params;
-  const where = `masterData(current(categories(id="${categoryId}")))`;
+  const where = `categories(id="${categoryId}")`;
 
   const res = await apiRootApp
-    .products()
+    .productProjections()
     .get({ queryArgs: { where, limit, offset } })
     .execute();
 
-  const body: ProductPagedQueryResponse = res.body;
+  const body: ProductProjectionPagedQueryResponse = res.body;
   return body;
 }
 

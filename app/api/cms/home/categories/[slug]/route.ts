@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { unstable_cache as cache } from 'next/cache';
 import { fetchCategoryContentFromCMS } from '@/lib/contentful/category';
-import { cookies } from 'next/dist/server/request/cookies';
+import { cookies } from 'next/headers';
 
 export interface CategoryCMSContentDTO {
     slug: string;
@@ -41,7 +41,7 @@ export async function GET(
     headers: {
       // 'Cache-Control': 'no-store', // safest for immediate freshness
       // or keep it very short if you want some CDN caching:
-      'Cache-Control': 'no-store' // 'public, max-age=0, s-maxage=0, stale-while-revalidate=0',
+      'Cache-Control': 'no-store', // 'public, max-age=0, s-maxage=0, stale-while-revalidate=0',
     },
   });
 }

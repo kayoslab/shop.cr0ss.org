@@ -87,6 +87,18 @@ export default function middleware(req: NextRequest) {
   }
 
   const cookieLocale = (req.cookies.get('locale')?.value ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB') as 'de-DE' | 'en-GB';
+  const { pathname } = req.nextUrl;
+  // Skip static files and Next internals
+  if (pathname.startsWith('/_next') || pathname.startsWith('/assets')) return;
+
+  const seg = pathname.split('/')[1];
+  if (!SUPPORTED.includes(seg as any)) {
+    const url = req.nextUrl.clone();
+    url.pathname = `/${process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB'}${pathname}`;
+    return NextResponse.redirect(url);
+  }
+
+  // Cookie handling
   let locale: SupportedLocale;
 
   if (cookieLocale && SUPPORTED.includes(cookieLocale)) {

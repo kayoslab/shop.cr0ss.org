@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { unstable_cache as cache } from 'next/cache';
-import type { ProductPagedQueryResponse } from '@commercetools/platform-sdk';
-import { getProducts, mapProductToDTO } from '@/lib/ct/products';
+import type { ProductProjectionPagedQueryResponse } from '@commercetools/platform-sdk';
+import { getProductProjections, mapProductToDTO } from '@/lib/ct/products';
 import { type ProductDTO } from '@/lib/ct/dto/product';
-import { cookies } from 'next/dist/server/request/cookies';
+import { cookies } from 'next/headers';
 
 interface ListResponse {
   items: ProductDTO[];
@@ -12,29 +12,31 @@ interface ListResponse {
   offset: number;
 }
 
-async function _fetchProducts(qsString: string, locale: string): Promise<ListResponse> {
+async function _fetchProducts(qsString: string, locale: string, currency: string, country: string): Promise<ListResponse> {
   const searchParams = new URLSearchParams(qsString);
   const limit = Math.max(1, Math.min(50, Number(searchParams.get('limit')) || 35));
   const offset = Math.max(0, Number(searchParams.get('offset')) || 0);
-
-  const data: ProductPagedQueryResponse = await getProducts({ limit, offset });
-  const items = (data.results ?? []).map((p) => mapProductToDTO(p, locale));
+  const data: ProductProjectionPagedQueryResponse = await getProductProjections({ limit, offset }, { currency, country }, locale);
+  const items = (data.results ?? []).map((p) => mapProductToDTO(p, locale, { currency, country }));
 
   return { items, total: data.total ?? items.length, limit, offset };
 }
 
-const cachedFetchProducts = (qsString: string, locale: string) =>
-  cache(_fetchProducts, ['api-products', qsString, locale], {
+const cachedFetchProducts = (qsString: string, locale: string, currency: string, country: string) =>
+  cache(_fetchProducts, ['api-products', qsString, locale, currency, country], {
     tags: ['products'],
     revalidate: 300,
-  })(qsString, locale);
+  })(qsString, locale, currency, country);
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   
   const c = cookies();
   const cookieLocale = ((await c).get('locale')?.value ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB') as 'de-DE' | 'en-GB';
-  const data = await cachedFetchProducts(url.searchParams.toString(), cookieLocale);
+  const cookieCurrency = ((await c).get('currency')?.value ?? process.env.DEMO_DEFAULT_CURRENCY ?? 'GBP') as 'EUR' | 'GBP';
+  const cookieCountry = ((await c).get('country')?.value ?? process.env.DEMO_DEFAULT_COUNTRY ?? 'GB') as 'DE' | 'GB';
+  
+  const data = await cachedFetchProducts(url.searchParams.toString(), cookieLocale, cookieCurrency, cookieCountry);
   return NextResponse.json(data, {
     headers: {
       'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=60',

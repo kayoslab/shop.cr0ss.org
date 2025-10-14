@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { unstable_cache as cache } from 'next/cache';
 import type {
   Category,
-  ProductPagedQueryResponse,
+  ProductProjectionPagedQueryResponse,
 } from '@commercetools/platform-sdk';
 import {
   appGetCategoryBySlug,
@@ -10,7 +10,7 @@ import {
 } from '@/lib/ct/categories';
 import { type ProductDTO } from '@/lib/ct/dto/product';
 import { mapProductToDTO } from '@/lib/ct/products';
-import { cookies } from 'next/dist/server/request/cookies';
+import { cookies } from 'next/headers';
 
 interface ListResponse {
   categoryId: string;
@@ -23,8 +23,10 @@ interface ListResponse {
 
 async function _fetchCategoryPLP(
   slug: string,
+  qsString: string,
   locale: string,
-  qsString: string
+  currency: string,
+  country: string
 ): Promise<ListResponse | null> {
   const searchParams = new URLSearchParams(qsString);
   const limit = Math.max(1, Math.min(50, Number(searchParams.get('limit')) || 12));
@@ -33,13 +35,13 @@ async function _fetchCategoryPLP(
   const category: Category | null = await appGetCategoryBySlug(slug, locale);
   if (!category) return null;
 
-  const data: ProductPagedQueryResponse = await appListProductsByCategoryId({
+  const data: ProductProjectionPagedQueryResponse = await appListProductsByCategoryId({
     categoryId: category.id,
     limit,
     offset,
   });
 
-  const items = (data.results ?? []).map((p) => mapProductToDTO(p, locale));
+  const items = (data.results ?? []).map((p) => mapProductToDTO(p, locale, { currency: currency, country: country }));
 
   return {
     categoryId: category.id,
@@ -51,11 +53,11 @@ async function _fetchCategoryPLP(
   };
 }
 
-const cachedFetchCategoryPLP = (slug: string, locale: string, qs: string) =>
-  cache(_fetchCategoryPLP, ['api-plp', slug, locale, qs], {
+const cachedFetchCategoryPLP = (slug: string, qs: string, locale: string, currency: string, country: string) =>
+  cache(_fetchCategoryPLP, ['api-plp', slug, locale, qs, currency, country], {
     tags: [`plp:cat:${slug}`],
     revalidate: 300,
-  })(slug, locale, qs);
+  })(slug, qs, locale, currency, country);
 
 export async function GET(
   request: NextRequest,
@@ -65,9 +67,11 @@ export async function GET(
   
   const c = cookies();
   const cookieLocale = ((await c).get('locale')?.value ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB') as 'de-DE' | 'en-GB';
+  const cookieCurrency = ((await c).get('currency')?.value ?? process.env.DEMO_DEFAULT_CURRENCY ?? 'GBP') as 'EUR' | 'GBP';
+  const cookieCountry = ((await c).get('country')?.value ?? process.env.DEMO_DEFAULT_COUNTRY ?? 'GB') as 'DE' | 'GB';
 
   const url = new URL(request.url);
-  const data = await cachedFetchCategoryPLP(slug, cookieLocale, url.searchParams.toString());
+  const data = await cachedFetchCategoryPLP(slug, url.searchParams.toString(), cookieLocale, cookieCurrency, cookieCountry);
 
   if (!data) return new NextResponse('Not found', { status: 404 });
 

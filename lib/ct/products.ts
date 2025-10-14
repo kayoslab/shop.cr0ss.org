@@ -4,6 +4,7 @@ import type {
   LocalizedString,
   Money,
   Product,
+  ProductProjection,
   ProductVariant,
 } from '@commercetools/platform-sdk';
 import type {
@@ -18,7 +19,12 @@ import type {
 
 type LString = Record<string, string>;
 type EnumVal = { key: string; label: string | LString };
-
+type PriceContext = {
+  currency: string;
+  country?: string;
+  customerGroupId?: string;
+  channelId?: string;
+};
 const DEFAULT_FALLBACKS = ['en-GB', 'de-DE'] as const;
 
 function ls(locale: string, ls?: LocalizedString): string {
@@ -68,6 +74,37 @@ function isMoney(v: unknown): v is Money {
 
 function formatMoney(v: Money): string {
   return `${(v.centAmount / 100).toFixed(2)} ${v.currencyCode}`;
+}
+
+// Best-effort price selector following CT's matching rules order of specificity.
+// You can expand this if you also use validFrom/validUntil or price tiers.
+function pickPrice(
+  prices: NonNullable<ProductVariant['prices']> | undefined,
+  ctx: PriceContext
+) {
+  if (!prices || prices.length === 0) return undefined;
+
+  const byCurrency = prices.filter(p => p.value?.currencyCode === ctx.currency);
+  if (byCurrency.length === 0) return undefined;
+
+  // Highest specificity first: country + customerGroup + channel
+  const candidates =
+    byCurrency
+      .sort((a, b) => {
+        const score = (p: typeof a) =>
+          (p.country ? 4 : 0) +
+          (p.customerGroup?.id ? 2 : 0) +
+          (p.channel?.id ? 1 : 0);
+        return score(b) - score(a);
+      });
+
+  const match = candidates.find(p =>
+    (ctx.country ? p.country === ctx.country : true) &&
+    (ctx.customerGroupId ? p.customerGroup?.id === ctx.customerGroupId : !p.customerGroup) &&
+    (ctx.channelId ? p.channel?.id === ctx.channelId : !p.channel)
+  ) ?? candidates[0];
+
+  return match;
 }
 
 // -----------------------------
@@ -148,10 +185,10 @@ export function attrToValue(
 // Variant / Product mapping
 // -----------------------------
 
-function variantToDTO(locale: string, variant: ProductVariant): ProductVariantDTO {
-  const price = variant.prices?.[0];
-  const discounted = price?.discounted?.value;
-  const base = price?.value;
+function variantToDTO(locale: string, variant: ProductVariant, ctx: PriceContext): ProductVariantDTO {
+  const selected = pickPrice(variant.prices, ctx);
+  const discounted = selected?.discounted?.value;
+  const base = selected?.value;
 
   const images = (variant.images ?? []).map((img, i) => ({
     url: img.url?.startsWith('//') ? `https:${img.url}` : img.url,
@@ -170,7 +207,7 @@ function variantToDTO(locale: string, variant: ProductVariant): ProductVariantDT
     price: base
       ? {
           currencyCode: base.currencyCode,
-          centAmount: base.centAmount,
+          centAmount: discounted ? discounted.centAmount : base.centAmount,
           discounted: Boolean(discounted),
           discountedCentAmount: discounted?.centAmount,
         }
@@ -179,8 +216,8 @@ function variantToDTO(locale: string, variant: ProductVariant): ProductVariantDT
   };
 }
 
-export function mapProductToDTO(p: Product, locale: string): ProductDTO {
-  const cur = p.masterData?.current;
+export function mapProductToDTO(p: ProductProjection, locale: string, ctx: PriceContext): ProductDTO {
+  const cur = p;
   const master = cur?.masterVariant;
   const variantsList: ProductVariant[] = master
     ? [master, ...(cur?.variants ?? [])]
@@ -203,8 +240,8 @@ export function mapProductToDTO(p: Product, locale: string): ProductDTO {
     slug: cur?.slug ? ls(locale, cur.slug) : '',
     descriptionHtml,
     specifications: specs,
-    variants: variantsList.map((v) => variantToDTO(locale, v)),
-    masterVariantId: master?.id ?? 1, // fallback to 1 if absent (rare)
+    variants: variantsList.map((v) => variantToDTO(locale, v, ctx)),
+    masterVariantId: master?.id ?? 1,
   };
 }
 
@@ -212,7 +249,7 @@ export function mapProductToDTO(p: Product, locale: string): ProductDTO {
 // API calls
 // -----------------------------
 
-export async function searchProducts(limit = 12, locale = 'de-DE') {
+export async function searchProductProjections(limit = 12, locale = 'de-DE') {
   const res = await apiRootApp
     .productProjections()
     .search()
@@ -223,7 +260,7 @@ export async function searchProducts(limit = 12, locale = 'de-DE') {
   return res.body.results;
 }
 
-export async function searchProductBySlug(slug: string, locale = 'de-DE') {
+export async function searchProductProjectionsBySlug(slug: string, locale = 'de-DE') {
   const res = await apiRootApp
     .productProjections()
     .search()
@@ -234,18 +271,49 @@ export async function searchProductBySlug(slug: string, locale = 'de-DE') {
   return res.body.results[0] || null;
 }
 
-export async function getProducts(params: { limit?: number; offset?: number } = {}) {
+export async function getProductProjections(params: { limit?: number; offset?: number, } = {}, ctx: PriceContext, locale = 'de-DE') {
   const { limit = 12, offset = 0 } = params;
   const res = await apiRootApp
-    .products()
+    .productProjections()
     .get({
-      queryArgs: { limit, offset },
+      queryArgs: { 
+        priceCurrency: ctx.currency,
+        ...(ctx.country ? { priceCountry: ctx.country } : {}),
+        limit,
+        offset 
+      },
     })
     .execute();
   return res.body;
 }
 
-export async function getProductById(id: string) {
-  const res = await apiRootApp.products().withId({ ID: id }).get().execute();
-  return res.body;
+export async function getProductProjectionById(id: string, ctx: PriceContext, locale = 'de-DE') {
+  const res = await apiRootApp
+    .productProjections()
+    .withId({ ID: id })
+    .get({
+      // price selection via query params; add staged: true if you want staged data
+      queryArgs: {
+        priceCurrency: ctx.currency,
+        ...(ctx.country ? { priceCountry: ctx.country } : {}),
+      },
+    })
+    .execute();
+  return res.body; // ProductProjection
+}
+
+export async function searchProductProjectionBySlug(slug: string, ctx: PriceContext, locale = 'de-DE') {
+  const res = await apiRootApp
+    .productProjections()
+    .search()
+    .get({
+      queryArgs: {
+        filter: [`slug.${locale}:"${slug}"`],
+        limit: 1,
+        priceCurrency: ctx.currency,
+        ...(ctx.country ? { priceCountry: ctx.country } : {}),
+      },
+    })
+    .execute();
+  return res.body.results[0] || null;
 }

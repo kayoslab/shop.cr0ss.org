@@ -67,6 +67,10 @@ function currencyFor(locale: SupportedLocale): 'EUR' | 'GBP' {
   return locale === 'de-DE' ? 'EUR' : 'GBP';
 }
 
+function countryFor(locale: SupportedLocale): 'DE' | 'GB' {
+  return locale === 'de-DE' ? 'DE' : 'GB';
+}
+
 export default function middleware(req: NextRequest) {
   const res = NextResponse.next();
 
@@ -100,13 +104,29 @@ export default function middleware(req: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: false,
     });
+    res.cookies.set('country', countryFor(locale), {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: false,
+    });
+    res.cookies.set('currency', currencyFor(locale), {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: false,
+    });
   }
 
   const currency = currencyFor(locale);
+  const country = countryFor(locale);
   const variant = req.nextUrl.pathname.length % 2 === 0 ? 'A' : 'B';
-
+  
   res.headers.set('x-locale', locale);
   res.headers.set('x-currency', currency);
+  res.headers.set('x-country', country);
   res.headers.set('x-variant', variant);
 
   return res;

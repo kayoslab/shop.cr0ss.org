@@ -6,7 +6,7 @@ import type { CategoryDTO } from '@/lib/ct/dto/category';
 import type { CategoryCMSContentDTO } from '@/app/[locale]/api/cms/home/categories/[slug]/route';
 import type { HomeDTO } from '@/lib/contentful/dto/home';
 import { headers } from 'next/headers';
-import { SupportedLocale } from '@/lib/i18n/locales';
+import { localeToCurrency, localeToCountry, SupportedLocale } from '@/lib/i18n/locales';
 
 export const revalidate = 300;
 
@@ -95,8 +95,9 @@ async function fetchRecommended(locale: SupportedLocale, limit = 4): Promise<Pro
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  
-  const res = await fetch(`${base}/${locale}/api/products?limit=${limit}`, {
+  const qs = new URLSearchParams({ limit: `${limit}`, currency: localeToCurrency(locale), country: localeToCountry(locale) }).toString();
+
+  const res = await fetch(`${base}/api/products${qs ? `?${qs}` : ''}`, {
     next: { tags: [`products:${locale}`] },
   });
   if (!res.ok) return [];

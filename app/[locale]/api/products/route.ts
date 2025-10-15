@@ -2,23 +2,22 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { unstable_cache as cache } from 'next/cache';
 import type { ProductProjectionPagedQueryResponse } from '@commercetools/platform-sdk';
 import { getProductProjections, mapProductProjectionToDTO } from '@/lib/ct/products';
-import { type ProductProjectionDTO } from '@/lib/ct/dto/product';
-import { cookies } from 'next/headers';
-import { 
-  SupportedLocale, 
-  SupportedCountry, 
-  SupportedCurrency, 
-  DEFAULT_COUNTRY, 
-  DEFAULT_CURRENCY, 
-  DEFAULT_LOCALE 
+import type { ProductProjectionDTO } from '@/lib/ct/dto/product';
+import {
+  SupportedLocale,
+  SupportedCountry,
+  SupportedCurrency,
+  DEFAULT_COUNTRY,
+  DEFAULT_CURRENCY,
+  DEFAULT_LOCALE,
 } from '@/lib/i18n/locales';
 
-interface ListResponse {
+type ListResponse = {
   items: ProductProjectionDTO[];
   total: number;
   limit: number;
   offset: number;
-}
+};
 
 async function _fetchProducts(
   qsString: string,
@@ -26,35 +25,55 @@ async function _fetchProducts(
   currency: SupportedCurrency,
   country: SupportedCountry
 ): Promise<ListResponse> {
-  const searchParams = new URLSearchParams(qsString);
-  const limit = Math.max(1, Math.min(50, Number(searchParams.get('limit')) || 35));
-  const offset = Math.max(0, Number(searchParams.get('offset')) || 0);
-  const data: ProductProjectionPagedQueryResponse = await getProductProjections({ limit, offset }, { currency, country }, locale);
-  const items = (data.results ?? []).map((p) => mapProductProjectionToDTO(p, locale, { currency, country }));
+  const sp = new URLSearchParams(qsString);
+  const limit = Math.max(1, Math.min(50, Number(sp.get('limit')) || 35));
+  const offset = Math.max(0, Number(sp.get('offset')) || 0);
+
+  const data: ProductProjectionPagedQueryResponse = await getProductProjections(
+    { limit, offset },
+    { currency, country },
+    locale
+  );
+
+  const items = (data.results ?? []).map((p) =>
+    mapProductProjectionToDTO(p, locale, { currency, country })
+  );
 
   return { items, total: data.total ?? items.length, limit, offset };
 }
 
+// cache key + tag include locale so revalidation can be per-locale
 const cachedFetchProducts = (
-  qsString: string, 
+  qsString: string,
   locale: SupportedLocale,
   currency: SupportedCurrency,
   country: SupportedCountry
 ) =>
   cache(_fetchProducts, ['api-products', qsString, locale, currency, country], {
-    tags: ['products'],
+    tags: [`products:${locale}`],
     revalidate: 300,
   })(qsString, locale, currency, country);
 
-export async function GET(request: NextRequest) {
-  const url = new URL(request.url);
-  
-  const c = cookies();
-  const cookieLocale = ((await c).get('locale')?.value ?? DEFAULT_LOCALE) as SupportedLocale;
-  const cookieCurrency = ((await c).get('currency')?.value ?? DEFAULT_CURRENCY) as SupportedCurrency;
-  const cookieCountry = ((await c).get('country')?.value ?? DEFAULT_COUNTRY) as SupportedCountry;
+export async function GET(
+  req: NextRequest,
+  ctx: { params: Promise<{ locale: SupportedLocale }> } // Next 15: params is a Promise
+) {
+  const { locale } = await ctx.params;
+  const url = new URL(req.url);
 
-  const data = await cachedFetchProducts(url.searchParams.toString(), cookieLocale, cookieCurrency, cookieCountry);
-  // Product data is fast changing → don't CDN-cache the HTTP response.
+  const currency = (url.searchParams.get('currency') as SupportedCurrency) ?? DEFAULT_CURRENCY;
+  const country  = (url.searchParams.get('country')  as SupportedCountry)  ?? DEFAULT_COUNTRY;
+
+  const data = await cachedFetchProducts(url.searchParams.toString(), locale, currency, country);
+
+  // Let unstable_cache handle freshness; keep HTTP response non-cacheable
   return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
+
+  // If you truly want CDN caching, use short s-maxage and vary on inputs:
+  // return NextResponse.json(data, {
+  //   headers: {
+  //     'Cache-Control': 'public, max-age=0, s-maxage=120, stale-while-revalidate=30',
+  //     'Vary': 'accept-encoding,locale,currency,country',
+  //   },
+  // });
 }

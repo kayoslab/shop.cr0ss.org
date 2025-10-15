@@ -32,7 +32,7 @@ async function fetchProduct(id: string, locale: SupportedLocale): Promise<Produc
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
   const qs = new URLSearchParams({ currency: localeToCurrency(locale), country: localeToCountry(locale) }).toString();
 
-  const res = await fetch(`${base}/api/products/${id}${qs ? `?${qs}` : ''}`, 
+  const res = await fetch(`${base}/${locale}/api/products/${id}${qs ? `?${qs}` : ''}`, 
     { cache: 'no-store' }
   );
   
@@ -58,8 +58,9 @@ export default async function ProductDetailPage({
       </main>
     );
   }
-
+  
   const product = await fetchProduct(id, localeTyped);
+
   if (!product) {
     return (
       <main className="mx-auto max-w-6xl px-6 py-16">

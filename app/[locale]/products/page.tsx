@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import type { ProductDTO } from '@/lib/ct/dto/product';
 import { ProductCard } from '@/components/ProductCard';
-import { SUPPORTED_LOCALES, SupportedLocale } from '@/lib/i18n/locales';
+import { localeToCountry, localeToCurrency, SUPPORTED_LOCALES, SupportedLocale } from '@/lib/i18n/locales';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,18 +13,14 @@ interface ListResponse {
   offset: number;
 }
 
-async function fetchProducts(): Promise<ListResponse | null> {
+async function fetchProducts(locale: SupportedLocale): Promise<ListResponse | null> {
   const h = headers();
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  const cookie = (await h).get('cookie') ?? '';
-  const res = await fetch(`${base}/api/products`, 
-    { 
-      headers: { cookie },
-      // next: { tags: ['products'] },
-    }
-  );
+  const qs = new URLSearchParams({ currency: localeToCurrency(locale), country: localeToCountry(locale) }).toString();
+
+  const res = await fetch(`${base}/api/products${qs ? `?${qs}` : ''}`, { cache: 'no-store' });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error('Failed to load products');
   return res.json() as Promise<ListResponse>;
@@ -49,7 +45,7 @@ export default async function ProductsPage({
     );
   }
 
-  const data = await fetchProducts();
+  const data = await fetchProducts(localeTyped);
   if (!data) return notFound();
 
   return (

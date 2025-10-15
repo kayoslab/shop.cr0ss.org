@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { unstable_cache as cache } from 'next/cache';
 import type { ProductProjectionPagedQueryResponse } from '@commercetools/platform-sdk';
-import { getProductProjections, mapProductToDTO } from '@/lib/ct/products';
-import { type ProductDTO } from '@/lib/ct/dto/product';
+import { getProductProjections, mapProductProjectionToDTO } from '@/lib/ct/products';
+import { type ProductProjectionDTO } from '@/lib/ct/dto/product';
 import { cookies } from 'next/headers';
 
 interface ListResponse {
-  items: ProductDTO[];
+  items: ProductProjectionDTO[];
   total: number;
   limit: number;
   offset: number;
@@ -17,7 +17,7 @@ async function _fetchProducts(qsString: string, locale: string, currency: string
   const limit = Math.max(1, Math.min(50, Number(searchParams.get('limit')) || 35));
   const offset = Math.max(0, Number(searchParams.get('offset')) || 0);
   const data: ProductProjectionPagedQueryResponse = await getProductProjections({ limit, offset }, { currency, country }, locale);
-  const items = (data.results ?? []).map((p) => mapProductToDTO(p, locale, { currency, country }));
+  const items = (data.results ?? []).map((p) => mapProductProjectionToDTO(p, locale, { currency, country }));
 
   return { items, total: data.total ?? items.length, limit, offset };
 }
@@ -37,9 +37,6 @@ export async function GET(request: NextRequest) {
   const cookieCountry = ((await c).get('country')?.value ?? process.env.DEMO_DEFAULT_COUNTRY ?? 'GB') as 'DE' | 'GB';
   
   const data = await cachedFetchProducts(url.searchParams.toString(), cookieLocale, cookieCurrency, cookieCountry);
-  return NextResponse.json(data, {
-    headers: {
-      'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=60',
-    },
-  });
+  // Product data is fast changing → don't CDN-cache the HTTP response.
+  return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
 }

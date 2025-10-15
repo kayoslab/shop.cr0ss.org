@@ -2,7 +2,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { unstable_cache as cache } from 'next/cache';
 import { appGetCategoryBySlug, appListProductsByCategoryId } from '@/lib/ct/categories';
-import { mapProductToDTO } from '@/lib/ct/products';
+import { mapProductProjectionToDTO } from '@/lib/ct/products';
 import type { Category, ProductProjectionPagedQueryResponse } from '@commercetools/platform-sdk';
 
 async function _fetchCategoryPLP(
@@ -44,7 +44,7 @@ async function _fetchCategoryPLP(
   });
 
   const items = (data.results ?? []).map((p) =>
-    mapProductToDTO(p, locale, { currency, country })
+    mapProductProjectionToDTO(p, locale, { currency, country })
   );
 
   return {

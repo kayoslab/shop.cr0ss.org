@@ -1,31 +1,39 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import type { ProductProjection } from '@commercetools/platform-sdk';
-import { getProductProjectionById, mapProductToDTO } from '@/lib/ct/products';
-import { type ProductDTO } from '@/lib/ct/dto/product';
-import { cookies } from 'next/headers';
+import { getProductProjectionById, mapProductProjectionToDTO } from '@/lib/ct/products';
+import type { ProductProjectionDTO } from '@/lib/ct/dto/product';
 
-async function _fetchProduct(id: string, locale: string, currency: string, country: string): Promise<ProductDTO | null> {
-  const p: ProductProjection | undefined = await getProductProjectionById(id, { currency, country }, locale).catch(() => undefined);
-  if (!p) return null;
-  return mapProductToDTO(p, locale, { currency, country });
+type Locale = 'de-DE' | 'en-GB';
+
+async function _fetchProduct(
+  id: string,
+  locale: Locale,
+  currency: string,
+  country: string
+): Promise<ProductProjectionDTO | null> {
+  const proj: ProductProjection | undefined = await getProductProjectionById(
+    id,
+    { currency, country },
+    locale
+  ).catch(() => undefined);
+
+  if (!proj) return null;
+  return mapProductProjectionToDTO(proj, locale, { currency, country });
 }
 
 export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  req: NextRequest,  
+  ctx: { params: Promise<{ locale: Locale; id: string }> }
 ) {
-  const { id } = await context.params;
-  const c = cookies();
-  const cookieLocale = ((await c).get('locale')?.value ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB') as 'de-DE' | 'en-GB';
-  const cookieCurrency = ((await c).get('currency')?.value ?? process.env.DEMO_DEFAULT_CURRENCY ?? 'GBP') as 'EUR' | 'GBP';
-  const cookieCountry = ((await c).get('country')?.value ?? process.env.DEMO_DEFAULT_COUNTRY ?? 'GB') as 'DE' | 'GB';
-  
-  const data = await _fetchProduct(id, cookieLocale, cookieCurrency, cookieCountry);
+  const { locale, id } = await ctx.params;
+
+  const url = new URL(req.url);
+  const currency = url.searchParams.get('currency') ?? (locale === 'de-DE' ? 'EUR' : 'GBP');
+  const country = url.searchParams.get('country') ?? (locale === 'de-DE' ? 'DE' : 'GB');
+
+  const data = await _fetchProduct(id, locale, currency, country);
   if (!data) return new NextResponse('Not found', { status: 404 });
 
-  return NextResponse.json(data, {
-    headers: {
-      'Cache-Control': 'no-store',
-    },
-  });
+  // Product data is fast changing → don't CDN-cache the HTTP response.
+  return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
 }

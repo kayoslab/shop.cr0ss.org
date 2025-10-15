@@ -3,7 +3,6 @@ import { unstable_cache as cache } from 'next/cache';
 import type { Category } from '@commercetools/platform-sdk';
 import { appListCategories, buildCategoryTree } from '@/lib/ct/categories';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
-import { cookies } from 'next/headers';
 
 async function _fetchCategories(locale: string): Promise<CategoryDTO[]> {
   const list: Category[] = await appListCategories(200);

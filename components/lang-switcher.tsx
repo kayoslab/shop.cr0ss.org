@@ -23,9 +23,17 @@ export default function LangSwitcher({ current }: { current: SupportedLocale }) 
   const [isPending, startTransition] = useTransition();
 
   function switchTo(next: 'de-DE'|'en-GB') {
+    if (next === current) {
+      setOpen(false);
+      return;
+    }
+    
     const parts = pathname.split('/');
     parts[1] = next;
     router.push(parts.join('/'));
+    
+    startTransition(() => router.refresh());
+    setOpen(false);
   }
 
   return (

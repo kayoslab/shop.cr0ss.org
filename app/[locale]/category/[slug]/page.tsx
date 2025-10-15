@@ -76,7 +76,7 @@ export default async function CategoryPage({
         {data.items.map((p) => {
           return (
             <li key={p.id}>
-              <ProductCard product={p} compact={false} />
+              <ProductCard product={p} compact={false} locale={locale} />
             </li>
           );
         })}

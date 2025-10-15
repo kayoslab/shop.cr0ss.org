@@ -12,7 +12,7 @@ export async function appGetCategoryBySlug(
   locale: string
 ): Promise<Category | null> {
   const fallbackLocale = process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB';
-const where = `slug(${locale}="${esc(slug)}") or slug(${fallbackLocale}="${esc(slug)}")`;
+  const where = `slug(${locale}="${esc(slug)}") or slug(${fallbackLocale}="${esc(slug)}")`;
 
   const res = await apiRootApp
     .categories()

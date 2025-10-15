@@ -125,8 +125,8 @@ export default async function HomePage({
         ctaLink={home?.hero.ctaLink}
         imageUrl={home?.hero.imageUrl}
       />
-      <CategoryTiles heading={home?.showcaseHeading} categories={categories} />
-      <ProductSlider items={recommendedItems} heading={home?.recommendedHeading} />
+      <CategoryTiles heading={home?.showcaseHeading} categories={categories} locale={locale}/>
+      <ProductSlider items={recommendedItems} heading={home?.recommendedHeading} locale={locale} />
     </main>
   );
 }

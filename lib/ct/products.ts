@@ -3,14 +3,13 @@ import type {
   Attribute,
   LocalizedString,
   Money,
-  Product,
   ProductProjection,
   ProductVariant,
 } from '@commercetools/platform-sdk';
 import type {
   AttributeValue,
-  ProductDTO,
-  ProductVariantDTO,
+  ProductProjectionDTO,
+  ProductProjectionVariantDTO,
 } from './dto/product';
 
 // -----------------------------
@@ -185,7 +184,7 @@ export function attrToValue(
 // Variant / Product mapping
 // -----------------------------
 
-function variantToDTO(locale: string, variant: ProductVariant, ctx: PriceContext): ProductVariantDTO {
+function variantToDTO(locale: string, variant: ProductVariant, ctx: PriceContext): ProductProjectionVariantDTO {
   const selected = pickPrice(variant.prices, ctx);
   const discounted = selected?.discounted?.value;
   const base = selected?.value;
@@ -216,7 +215,7 @@ function variantToDTO(locale: string, variant: ProductVariant, ctx: PriceContext
   };
 }
 
-export function mapProductToDTO(p: ProductProjection, locale: string, ctx: PriceContext): ProductDTO {
+export function mapProductProjectionToDTO(p: ProductProjection, locale: string, ctx: PriceContext): ProductProjectionDTO {
   const cur = p;
   const master = cur?.masterVariant;
   const variantsList: ProductVariant[] = master
@@ -299,7 +298,8 @@ export async function getProductProjectionById(id: string, ctx: PriceContext, lo
       },
     })
     .execute();
-  return res.body; // ProductProjection
+  
+  return res.body;
 }
 
 export async function searchProductProjectionBySlug(slug: string, ctx: PriceContext, locale = 'de-DE') {

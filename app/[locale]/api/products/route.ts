@@ -56,15 +56,20 @@ const cachedFetchProducts = (
 
 export async function GET(
   req: NextRequest,
-  ctx: { params: Promise<{ locale: SupportedLocale }> } // Next 15: params is a Promise
+  ctx: { params: Promise<{ locale: string }> } // Next 15: params is a Promise
 ) {
   const { locale } = await ctx.params;
+  const typedLocale = (locale === 'de-DE' ? 'de-DE' : 'en-GB') as SupportedLocale;
+
+  if (typedLocale !== locale) {
+    return new NextResponse('Locale not supported', { status: 400 });
+  }
   const url = new URL(req.url);
 
   const currency = (url.searchParams.get('currency') as SupportedCurrency) ?? DEFAULT_CURRENCY;
   const country  = (url.searchParams.get('country')  as SupportedCountry)  ?? DEFAULT_COUNTRY;
 
-  const data = await cachedFetchProducts(url.searchParams.toString(), locale, currency, country);
+  const data = await cachedFetchProducts(url.searchParams.toString(), typedLocale, currency, country);
 
   // Let unstable_cache handle freshness; keep HTTP response non-cacheable
   return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });

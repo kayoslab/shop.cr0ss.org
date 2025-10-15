@@ -1,40 +1,27 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { SupportedLocale, localeToLabel, localeToFlag, SUPPORTED_LOCALES } from '@/lib/i18n/locales';
 
-type SupportedLocale = 'de-DE' | 'en-GB';
-
-const LABEL: Record<SupportedLocale, string> = {
-  'de-DE': 'Deutsch (DE)',
-  'en-GB': 'English (UK)',
-};
-
-const FLAG: Record<SupportedLocale, string> = {
-  'de-DE': '🇩🇪',
-  'en-GB': '🇬🇧',
-};
 
 export default function LangSwitcher({ current }: { current: SupportedLocale }) {
   const router = useRouter();
+  const pathname = usePathname();
+
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  async function setLocale(locale: SupportedLocale) {
-    if (locale === current) {
+  function switchTo(next: SupportedLocale) {
+    if (next === current) {
       setOpen(false);
       return;
     }
     
-    await fetch('/api/locale', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ locale }),
-      credentials: 'include',
-      cache: 'no-store',
-    });
+    const parts = pathname.split('/');
+    parts[1] = next;
+    router.push(parts.join('/'));
     
-    // Refresh the whole tree so nav + page content re-read cookies()
     startTransition(() => router.refresh());
     setOpen(false);
   }
@@ -48,8 +35,8 @@ export default function LangSwitcher({ current }: { current: SupportedLocale }) 
         onClick={() => setOpen((v) => !v)}
         className="inline-flex items-center gap-2 rounded-lg border px-2 py-1 text-sm hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800"
       >
-        <span className="text-lg leading-none">{FLAG[current]}</span>
-        <span className="hidden sm:inline">{LABEL[current]}</span>
+        <span className="text-lg leading-none">{localeToFlag(current)}</span>
+        <span className="hidden sm:inline">{localeToLabel(current)}</span>
         <svg
           className="h-4 w-4 opacity-70"
           viewBox="0 0 20 20"
@@ -70,18 +57,18 @@ export default function LangSwitcher({ current }: { current: SupportedLocale }) 
           tabIndex={-1}
           className="absolute right-0 z-50 mt-2 w-44 rounded-xl border bg-white p-2 text-sm shadow-xl dark:border-gray-800 dark:bg-gray-900"
         >
-          {(['en-GB', 'de-DE'] as SupportedLocale[]).map((loc) => (
+          { SUPPORTED_LOCALES.map((loc) => (
             <button
               key={loc}
               role="menuitem"
               disabled={isPending}
-              onClick={() => setLocale(loc)}
+              onClick={() => switchTo(loc)}
               className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800 ${
                 loc === current ? 'font-medium' : ''
               }`}
             >
-              <span className="text-lg leading-none">{FLAG[loc]}</span>
-              <span>{LABEL[loc]}</span>
+              <span className="text-lg leading-none">{localeToFlag(loc)}</span>
+              <span>{localeToLabel(loc)}</span>
             </button>
           ))}
         </div>

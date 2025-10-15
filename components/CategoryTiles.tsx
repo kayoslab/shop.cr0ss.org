@@ -6,9 +6,11 @@ import { Card } from '@/components/card';
 export function CategoryTiles({
   heading = 'Shop by Category',
   categories,
+  locale,
 }: {
   heading?: string;
   categories: CategoryDTO[];
+  locale: string;
 }) {
   return (
     <section className="py-16 bg-background">
@@ -22,7 +24,7 @@ export function CategoryTiles({
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {categories.map((category) => (
-            <Link key={category.id} href={`/category/${category.slug}`} className="group block h-full">
+            <Link key={category.id} href={`/${locale}/category/${category.slug}`} className="group block h-full">
               <Card className="h-full overflow-hidden rounded-2xl border-border transition-shadow hover:shadow-lg flex flex-col">
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <Image

@@ -1,4 +1,5 @@
 import type { Category } from '@commercetools/platform-sdk';
+import { DEFAULT_LOCALE, SupportedLocale } from '@/lib/i18n/locales';
 
 export interface CategoryDTO {
   id: string;
@@ -13,12 +14,12 @@ export interface CategoryDTO {
   };
 }
 
-export function categoryRecordToDTO(c: Category, locale: string): Omit<CategoryDTO, 'children'> {
+export function categoryRecordToDTO(c: Category, locale: SupportedLocale): Omit<CategoryDTO, 'children'> {
   const name = (c.name as Record<string, string> | undefined)?.[locale]
-    ?? (c.name as Record<string, string> | undefined)?.['en-GB']
+    ?? (c.name as Record<string, string> | undefined)?.[DEFAULT_LOCALE]
     ?? '—';
   const slug = (c.slug as Record<string, string> | undefined)?.[locale]
-    ?? (c.slug as Record<string, string> | undefined)?.['en-GB']
+    ?? (c.slug as Record<string, string> | undefined)?.[DEFAULT_LOCALE]
     ?? c.id;
 
   return {

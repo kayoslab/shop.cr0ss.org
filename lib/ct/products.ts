@@ -3,15 +3,15 @@ import type {
   Attribute,
   LocalizedString,
   Money,
-  Product,
   ProductProjection,
   ProductVariant,
 } from '@commercetools/platform-sdk';
 import type {
   AttributeValue,
-  ProductDTO,
-  ProductVariantDTO,
+  ProductProjectionDTO,
+  ProductProjectionVariantDTO,
 } from './dto/product';
+import { SUPPORTED_LOCALES, DEFAULT_LOCALE } from '@/lib/i18n/locales';
 
 // -----------------------------
 // Helpers & Type Guards
@@ -25,14 +25,13 @@ type PriceContext = {
   customerGroupId?: string;
   channelId?: string;
 };
-const DEFAULT_FALLBACKS = ['en-GB', 'de-DE'] as const;
 
 function ls(locale: string, ls?: LocalizedString): string {
   if (!ls) return '';
   return ls[locale] ?? Object.values(ls)[0] ?? '';
 }
 
-// crude but practical; covers "en-GB", "de-DE", "en", etc.
+// crude but practical;
 function looksLikeLocaleKey(k: string): boolean {
   return /^[a-z]{2}(-[A-Z]{2})?$/.test(k);
 }
@@ -49,7 +48,7 @@ function isLocalizedStringObject(v: unknown): v is LString {
 function pickLocale<T extends Record<string, string>>(
   map: T,
   locale: string,
-  fallbacks: readonly string[] = DEFAULT_FALLBACKS
+  fallbacks: readonly string[] = SUPPORTED_LOCALES
 ): string | undefined {
   if (map[locale]) return map[locale];
   for (const fb of fallbacks) if (map[fb]) return map[fb];
@@ -114,7 +113,7 @@ function pickPrice(
 export function attrToValue(
   locale: string,
   attr?: Attribute,
-  fallbacks: readonly string[] = DEFAULT_FALLBACKS
+  fallbacks: readonly string[] = SUPPORTED_LOCALES
 ): AttributeValue {
   if (!attr) return null;
 
@@ -185,7 +184,7 @@ export function attrToValue(
 // Variant / Product mapping
 // -----------------------------
 
-function variantToDTO(locale: string, variant: ProductVariant, ctx: PriceContext): ProductVariantDTO {
+function variantToDTO(locale: string, variant: ProductVariant, ctx: PriceContext): ProductProjectionVariantDTO {
   const selected = pickPrice(variant.prices, ctx);
   const discounted = selected?.discounted?.value;
   const base = selected?.value;
@@ -216,7 +215,7 @@ function variantToDTO(locale: string, variant: ProductVariant, ctx: PriceContext
   };
 }
 
-export function mapProductToDTO(p: ProductProjection, locale: string, ctx: PriceContext): ProductDTO {
+export function mapProductProjectionToDTO(p: ProductProjection, locale: string, ctx: PriceContext): ProductProjectionDTO {
   const cur = p;
   const master = cur?.masterVariant;
   const variantsList: ProductVariant[] = master
@@ -249,7 +248,7 @@ export function mapProductToDTO(p: ProductProjection, locale: string, ctx: Price
 // API calls
 // -----------------------------
 
-export async function searchProductProjections(limit = 12, locale = 'de-DE') {
+export async function searchProductProjections(limit = 12, locale = DEFAULT_LOCALE) {
   const res = await apiRootApp
     .productProjections()
     .search()
@@ -260,7 +259,7 @@ export async function searchProductProjections(limit = 12, locale = 'de-DE') {
   return res.body.results;
 }
 
-export async function searchProductProjectionsBySlug(slug: string, locale = 'de-DE') {
+export async function searchProductProjectionsBySlug(slug: string, locale = DEFAULT_LOCALE) {
   const res = await apiRootApp
     .productProjections()
     .search()
@@ -271,7 +270,7 @@ export async function searchProductProjectionsBySlug(slug: string, locale = 'de-
   return res.body.results[0] || null;
 }
 
-export async function getProductProjections(params: { limit?: number; offset?: number, } = {}, ctx: PriceContext, locale = 'de-DE') {
+export async function getProductProjections(params: { limit?: number; offset?: number, } = {}, ctx: PriceContext, locale = DEFAULT_LOCALE) {
   const { limit = 12, offset = 0 } = params;
   const res = await apiRootApp
     .productProjections()
@@ -287,7 +286,7 @@ export async function getProductProjections(params: { limit?: number; offset?: n
   return res.body;
 }
 
-export async function getProductProjectionById(id: string, ctx: PriceContext, locale = 'de-DE') {
+export async function getProductProjectionById(id: string, ctx: PriceContext, locale = DEFAULT_LOCALE) {
   const res = await apiRootApp
     .productProjections()
     .withId({ ID: id })
@@ -299,10 +298,11 @@ export async function getProductProjectionById(id: string, ctx: PriceContext, lo
       },
     })
     .execute();
-  return res.body; // ProductProjection
+  
+  return res.body;
 }
 
-export async function searchProductProjectionBySlug(slug: string, ctx: PriceContext, locale = 'de-DE') {
+export async function searchProductProjectionBySlug(slug: string, ctx: PriceContext, locale = DEFAULT_LOCALE) {
   const res = await apiRootApp
     .productProjections()
     .search()

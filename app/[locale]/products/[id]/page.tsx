@@ -2,6 +2,8 @@ import { headers } from 'next/headers';
 import VariantPickerClient from '@/components/pdp/VariantPickerClient';
 import AddToBasketClient from '@/components/pdp/AddToBasketClient';
 import ProductGalleryClient from '@/components/pdp/ProductGalleryClient';
+import type { ProductProjectionDTO } from '@/lib/ct/dto/product';
+import { SupportedLocale, localeToCountry, localeToCurrency, SUPPORTED_LOCALES } from '@/lib/i18n/locales';
 
 export const runtime = 'edge';
 export const revalidate = 0;
@@ -24,39 +26,42 @@ function formatMoney(m?: Money, discounted?: Money) {
   return <span className="text-2xl font-semibold">{base} {code}</span>;
 }
 
-async function fetchProduct(id: string) {
+async function fetchProduct(id: string, locale: SupportedLocale): Promise<ProductProjectionDTO | null> {
   const h = headers();
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  const cookie = (await h).get('cookie') ?? '';
-  const res = await fetch(`${base}/api/products/${id}`, 
-    { 
-      cache: 'no-store',
-      headers: { cookie },
-      // next: { revalidate, tags: ['products'] },
-    }
+  const qs = new URLSearchParams({ currency: localeToCurrency(locale), country: localeToCountry(locale) }).toString();
+
+  const res = await fetch(`${base}/${locale}/api/products/${id}${qs ? `?${qs}` : ''}`, 
+    { cache: 'no-store' }
   );
   
   if (!res.ok) return null;
-  return res.json() as Promise<{
-    id: string;
-    name: string;
-    slug: string;
-    descriptionHtml?: string;
-    specifications: Array<{ name: string; value: string }>;
-    variants: Array<{
-      id: number; sku?: string;
-      images: { url: string; alt?: string }[];
-      price?: { currencyCode: string; centAmount: number; discounted?: boolean; discountedCentAmount?: number; };
-      attributes: Record<string, unknown>;
-    }>;
-    masterVariantId: number;
-  }>;
+
+  return res.json() as Promise<ProductProjectionDTO | null>;
 }
 
-export default async function ProductDetailPage({ params }: { params: { id: string } }) {
-  const product = await fetchProduct((await params).id);
+export default async function ProductDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { locale, id } = await params;
+  const localeTyped = locale as SupportedLocale;
+  if (!SUPPORTED_LOCALES.includes(localeTyped)) {
+    return (
+      <main className="mx-auto max-w-6xl px-6 py-16">
+        <h1 className="text-2xl font-semibold">Invalid locale</h1>
+        <p className="mt-2 text-gray-600">Please check the link or go back to Products.</p>
+      </main>
+    );
+  }
+  
+  const product = await fetchProduct(id, localeTyped);
+
   if (!product) {
     return (
       <main className="mx-auto max-w-6xl px-6 py-16">

@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
 import LangSwitcher from '@/components/lang-switcher';
+import { SupportedLocale, otherLocale } from '@/lib/i18n/locales';
+
 
 function BasketIcon({ className }: { className?: string }) {
   return (
@@ -12,18 +13,17 @@ function BasketIcon({ className }: { className?: string }) {
   );
 }
 
-export default async function Nav({ topLevel }: { topLevel: CategoryDTO[] }) {
+export default async function Nav({ topLevel, locale }: { topLevel: CategoryDTO[]; locale: SupportedLocale }) {
   const MAX_INLINE = 6;
   const inline = topLevel.slice(0, MAX_INLINE);
   const overflow = topLevel.slice(MAX_INLINE);
-  const c = cookies();
-  const cookieLocale = ((await c).get('locale')?.value ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB') as 'de-DE' | 'en-GB';
+  
   return (
     <header className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur dark:bg-gray-900/80">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         {/* Left: Brand + primary nav */}
         <div className="flex min-w-0 items-center gap-6">
-          <Link href="/" className="shrink-0 text-lg font-semibold tracking-tight">
+          <Link href={`/${locale}/`} className="shrink-0 text-lg font-semibold tracking-tight">
             Demo Store
           </Link>
 
@@ -32,7 +32,7 @@ export default async function Nav({ topLevel }: { topLevel: CategoryDTO[] }) {
             {inline.map((c) => (
               <Link
                 key={c.id}
-                href={`/category/${c.slug}`}
+                href={`/${locale}/category/${c.slug}`}
                 className="text-gray-700 hover:text-black dark:text-gray-300 dark:hover:text-white"
               >
                 {c.name}
@@ -48,7 +48,7 @@ export default async function Nav({ topLevel }: { topLevel: CategoryDTO[] }) {
                     {overflow.map((c) => (
                       <li key={c.id}>
                         <Link
-                          href={`/category/${c.slug}`}
+                          href={`/${locale}/category/${c.slug}`}
                           className="block rounded px-2 py-1 text-sm text-gray-700 hover:bg-gray-50 hover:text-black dark:text-gray-300 dark:hover:bg-gray-800"
                         >
                           {c.name}
@@ -64,8 +64,8 @@ export default async function Nav({ topLevel }: { topLevel: CategoryDTO[] }) {
 
         {/* Right: Language + Basket */}
         <div className="flex items-center gap-4">
-          <LangSwitcher current={cookieLocale === 'de-DE' ? 'de-DE' : 'en-GB'} />
-          <Link href="/cart" className="relative inline-flex items-center">
+          <LangSwitcher current={locale} />
+          <Link href={`/${locale}/cart`} className="relative inline-flex items-center">
             <BasketIcon className="h-6 w-6 text-gray-700 dark:text-gray-300" />
             <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">0</span>
           </Link>
@@ -75,7 +75,7 @@ export default async function Nav({ topLevel }: { topLevel: CategoryDTO[] }) {
       {/* Mobile category scroller */}
       <div className="border-t bg-white px-2 py-2 dark:bg-gray-900 md:hidden">
         <div className="mb-2 flex justify-end">
-          <LangSwitcher current={cookieLocale === 'de-DE' ? 'de-DE' : 'en-GB'} />
+          <LangSwitcher current={otherLocale(locale)} />
         </div>
         <nav className="flex items-center gap-3 overflow-x-auto scrollbar-none">
           {topLevel.map((c) => (

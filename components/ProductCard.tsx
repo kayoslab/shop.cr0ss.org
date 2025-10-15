@@ -6,6 +6,7 @@ import { type ProductDTO } from '@/lib/ct/dto/product';
 interface ProductCardProps {
   product: ProductDTO
   compact?: boolean
+  locale: string 
 }
 
 function formatPrice(p?: {
@@ -41,10 +42,10 @@ function getPrimaryImage(p: ProductDTO): { url: string; alt: string } | null {
   return { url, alt: p.name };
 }
 
-export function ProductCard({ product, compact = false }: ProductCardProps) {
+export function ProductCard({ product, compact = false, locale }: ProductCardProps) {
   const img = getPrimaryImage(product);
   return (
-    <Link href={`/products/${product.id}`} className="group">
+    <Link href={`/${locale}/products/${product.id}`} className="group">
       <Card className="overflow-hidden rounded-2xl border-border hover:shadow-lg transition-shadow h-full">
         <div className={`relative overflow-hidden ${compact ? "h-48" : "h-64"}`}>
             {img && (

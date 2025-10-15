@@ -1,8 +1,7 @@
 import type { Asset, AssetFile } from 'contentful';
 import { contentfulClient } from './client';
 import type { HomeDTO } from './dto/home';
-
-const DEFAULT_LOCALE = 'en-GB';
+import { DEFAULT_LOCALE } from '../i18n/locales';
 
 type HomeFields = {
     contentTypeId: string;

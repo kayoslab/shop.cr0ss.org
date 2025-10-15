@@ -1,24 +1,27 @@
-# Composable Storefront on Vercel (Next.js + commercetools + Contentful)
+# Composable Storefront on Vercel  
+**Next.js App Router + commercetools + Contentful (locale-scoped)**
 
-A demo storefront that showcases a **headless**, **composable** e-commerce architecture on **Vercel**, built with **Next.js App Router**, **commercetools (catalog & pricing)**, and **Contentful (home page CMS)**. It demonstrates **Edge personalization**, **selective cache revalidation**, and a clean separation of concerns via a thin **headless API façade**.
+A demo storefront showing a **headless**, **composable** e-commerce architecture on **Vercel**, built with **Next.js App Router**, **commercetools** (catalog & pricing), and **Contentful** (CMS). It demonstrates **per-locale caching**, **selective revalidation**, and a thin **headless API façade**.
 
 ## What this demo shows
 
-- Modern app architecture
-    - Next.js App Router with colocated route handlers (`/app/api/*`)
-    - Clean lib separation: `/lib/ct` (commercetools), `/lib/contentful` (CMS), `/lib/*/dto` (UI-safe models)
-    - Headless façade (`/api/products`, `/api/categories`,`/api/cms/home`) used by pages/components
-- Personalization at the edge
-    - Edge Middleware creates/reads an anonymous session and sets a low-entropy “segment” cookie
-    - Pages can adapt content without sacrificing cacheability (segment-scoped rendering)
-- Performance & caching
-    - `unstable_cache` + **cache** tags for surgical revalidation (no blanket purges)
-    - ISR-style `revalidate` windows where appropriate, `next/image` w/ responsive `sizes` for LCP
-- Selective freshness via events
-    - commercetools Subscriptions → webhook → `revalidateTag('products' | 'product:<id>' | 'categories' | 'plp:cat:<slug>')`
-    - Contentful Webhook → `revalidateTag('cms:home')` for instant homepage updates
+- **Modern App Router setup**  
+  - Routes live under a locale segment: `app/[locale]/…` (`de-DE`, `en-GB`)  
+  - Co-located handlers: `app/[locale]/api/*` (locale in the path = cache key)  
+  - Strict TypeScript + DTO layer (`/lib/*/dto`) decoupled from vendors
 
-## High-level Architecture
+- **Per-locale caching & tags**  
+  - Pages/API use `unstable_cache` with **per-locale keys & tags**  
+  - ISR on cacheable pages (Home/PLP/Nav), **no cookies** on those routes  
+  - Event-driven revalidation by tag (per locale)
+
+- **Fresh PDP at the Edge**  
+  - PDP is **Edge SSR** + `no-store` (price/stock correctness)  
+  - Pricing context (`currency`, `country`) passed via **query params** (not cookies)
+
+## High-level architecture
+
+
 
 ```
 Browser
@@ -27,11 +30,12 @@ Browser
   │
   └─ Next.js (App Router)
       ├─ Pages (Home, PLP, PDP) -> fetch from local /api Facade
-      ├─ /api/products, /api/products/[id] -> commercetools SDK (read)
-      ├─ /api/categories -> CT list + build tree (parent→children)
-      ├─ /api/cms/home -> Contentful (HomeDTO)
-      ├─ /api/ct/webhook -> CT Subscriptions → revalidateTag(...)
-      └─ /api/cms/webhook -> Contentful Webhook → revalidateTag('cms:home')
+      ├─ /[locale]/page.tsx (Home, ISR)
+      ├─ /[locale]/category/[slug] (PLP, ISR)
+      ├─ /[locale]/products/[id] (PDP, Edge SSR, no-store)
+      ├─ /[locale]/api/products, /[id] (cookie-free)
+      ├─ /[locale]/api/categories, /[slug]/products
+      └─ /[locale]/api/cms/home, /home/categories/[slug]
 
 Data Providers
   ├─ commercetools (catalog, prices, categories)
@@ -39,43 +43,85 @@ Data Providers
 
 ```
 
+
 ## Key decisions & trade-offs
 
-- Headless façade: UI only talks to `/api/*`. Swappable provider behind the API contract; stabilizes UI.
-- DTOs: decouple vendor payloads from components; UI is shielded from breaking schema changes.
-- Edge middleware: keep logic **minimal** (cookies/segments only). Heavy lifting stays in route handlers.
-- Category tree: CT REST doesn’t return `children`. We fetch all categories (paged, sorted by orderHint) and build the tree in memory.
-- Cache strategy: use `unstable_cache` with stable keys; read dynamic sources (e.g., `cookies()`) outside cache scopes and pass as arguments.
+- **Locale in the URL (path)**  
+  Locale is the first segment (`/[locale]/…`). This keeps **CDN/ISR caches per locale** naturally and avoids cookie-driven dynamism.
 
-## Features by page
+- **Cookie-free cacheable APIs**  
+  Cacheable APIs (Home, Categories, PLP) **do not read cookies**. Identity/context that affects cache keys must be in the URL (path/query). HTTP responses are usually `Cache-Control: no-store`; we rely on `unstable_cache` + tags for speed/freshness.
 
-- **Home**
-    - CMS-driven Hero (title, subtitle, CTA, hero image)
-    - Category tiles (top-level categories; optionally limited by featured slugs from CMS)
-    - Product strip (“Recommended”) with compact, responsive images
-- **Category PLP** (`/category/[slug]`)
-    - Category-scoped product listing via headless `/api/categories/[slug]/products`
-    - Tagged revalidation: `plp:cat:<slug>`
-- **Product PDP** (`/products/[id]`)
-    - UI-safe ProductDTO; tag `product:<id>` for targeted invalidation
-- **Global Nav**
-    - Top-level categories visible in the bar, mobile scroller, optional “More” overflow
-    - Basket icon stub (badge ready)
+- **PDP correctness over cacheability**  
+  PDP renders on **Edge** with `revalidate = 0` and all product fetches `cache: 'no-store'`. Currency/country come from query params (default derived from locale), so no accidental cache coupling.
 
-## Caching & revalidation
+- **Next 15 compliance**  
+  In **pages and route handlers**, `params` and `searchParams` are **Promises** and must be awaited:
+  ```ts
+  export async function GET(req, ctx: { params: Promise<{ locale: string }> }) {
+    const { locale } = await ctx.params;
+  }
+  // and in pages:
+  export default async function Page({
+    params, searchParams,
+  }: {
+    params: Promise<...>;
+    searchParams: Promise<...>;
+  }) { ... }
+```
 
-- Cache tags
-    - Products list: `products`
-    - Product details: `product:<id>`
-    - Category tree: `categories`
-    - Category PLP: `plp:cat:<slug>`
-    - CMS home: `cms:home`
-- Event-driven invalidation
-    - commercetools → `/api/ct/webhook`
-        - Product change → revalidate `products`, `product:<id>`, and all related category PLPs
-        - Category change → revalidate `categories` and that category’s PLP
-    - Contentful → `/api/cms/webhook`
-        - Home content change → revalidate `cms:home`
+## Routes & caching
+
+### Home (`/[locale]`)
+- **Page**: `app/[locale]/page.tsx`  
+  - `export const revalidate = 300` (ISR)
+  - Fetches `/${locale}/api/cms/home` (no cookies)
+  - Tags: `cms:home:<locale>`, `categories:<locale>`, `products:<locale>` (as needed)
+
+- **API**: `app/[locale]/api/cms/home/route.ts`  
+  - `unstable_cache` per **locale** (+ `preview`)
+  - Tag: `cms:home:<locale>`
+  - HTTP: `Cache-Control: no-store` (perf via `unstable_cache`)
+
+---
+
+### Categories / Nav
+- **API**: `app/[locale]/api/categories/route.ts`  
+  - `unstable_cache` per **locale**
+  - Tag: `categories:<locale>`
+
+- **Layout**: `app/[locale]/layout.tsx`  
+  - Fetch: `/${locale}/api/categories`
+  - `next: { revalidate: 3600, tags: ['categories:<locale>'] }`
+  - No `headers()` / `cookies()`; use `notFound()` for invalid locales
+
+---
+
+### PLP (`/[locale]/category/[slug]`)
+- **Page**: ISR (e.g., `export const revalidate = 600`)
+- **API**: `app/[locale]/api/categories/[slug]/products/route.ts`
+  - `unstable_cache` key includes: `slug`, `locale`, `qs`, `currency`, `country`
+  - Tag: `plp:cat:<slug>:<locale>`
+  - If slug belongs to the other locale: **308 redirect** to the locale-correct slug
+
+---
+
+### PDP (`/[locale]/products/[id]`)
+- **Page**: `export const runtime = 'edge'`; `export const revalidate = 0`
+  - Product fetches are `cache: 'no-store'` (correctness for price/stock)
+
+- **API**: `app/[locale]/api/products/[id]/route.ts`
+  - Reads `currency`/`country` from **query params** (defaults from locale)
+  - Returns **ProductProjectionDTO**
+  - HTTP: `Cache-Control: no-store`
+
+---
+
+### Products list (`/[locale]/api/products`)
+- Cookie-free; `currency`/`country` from query (or locale defaults)
+- `unstable_cache` tag: `products:<locale>`
+- HTTP: `Cache-Control: no-store`
+
 
 ## Tech stack
 
@@ -99,7 +145,6 @@ Create `.env.local` (sample—adjust to your project/region):
 ```
 # Base
 NODE_ENV=development
-DEMO_DEFAULT_LOCALE=en-GB
 NEXT_PUBLIC_BASE_PATH=http://localhost:3000
 
 # commercetools

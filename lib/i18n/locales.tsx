@@ -57,6 +57,12 @@ export function otherLocale(locale: SupportedLocale): SupportedLocale {
   return locale === 'de-DE' ? 'en-GB' : 'de-DE';
 }
 
+export function acceptLanguageToLocale(acceptLanguage: string): SupportedLocale {
+  const parsed = parseAcceptLanguage(acceptLanguage);
+  const tags = parsed.map((p) => p.tag);
+  return pickSupportedLocale(tags);
+}
+
 function normalizeLocaleTag(tag: string): string {
   const [lang, region] = tag.trim().split('-');
   if (!lang) return '';
@@ -84,4 +90,27 @@ function parseAcceptLanguage(languageHeader: string): Array<{ tag: string; q: nu
     })
     .filter((x) => x.tag !== '')
     .sort((a, b) => (b.q === a.q ? a.index - b.index : b.q - a.q));
+}
+
+function mapBaseToSupported(base: string): SupportedLocale | null {
+  if (base === 'de') return 'de-DE';
+  if (base === 'en') return 'en-GB';
+  return null;
+}
+
+// RFC 4647 "lookup" style: try exact, then strip region to base
+function pickSupportedLocale(accepted: string[]): SupportedLocale {
+  for (const raw of accepted) {
+    const tag = normalizeLocaleTag(raw);
+    if (!tag) continue;
+
+    if (SUPPORTED_LOCALES.includes(tag as SupportedLocale)) {
+      return tag as SupportedLocale;
+    }
+
+    const base = tag.split('-')[0];
+    const mapped = mapBaseToSupported(base);
+    if (mapped) return mapped;
+  }
+  return DEFAULT_LOCALE;
 }

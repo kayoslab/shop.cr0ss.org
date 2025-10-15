@@ -3,7 +3,7 @@ import ProductSlider from '@/components/ProductSlider';
 import { CategoryTiles } from '@/components/CategoryTiles';
 import type { ProductDTO } from '@/lib/ct/dto/product';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
-import type { CategoryCMSContentDTO } from '@/app/[locale]/api/cms/home/categories/[slug]/route';
+import type { CategoryCMSContentDTO } from '@/app/[locale]/api/cms/categories/[slug]/route';
 import type { HomeDTO } from '@/lib/contentful/dto/home';
 import { headers } from 'next/headers';
 import { localeToCurrency, localeToCountry, SupportedLocale } from '@/lib/i18n/locales';
@@ -32,7 +32,7 @@ async function fetchCategoryContentFromCMS(locale: SupportedLocale, slug: string
   const host = (await h).get('host');
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
   
-  const res = await fetch(`${base}/${locale}/api/cms/home/categories/${slug}`, {
+  const res = await fetch(`${base}/${locale}/api/cms/categories/${slug}`, {
     next: { tags: [`categories:${locale}`] },
   });
   if (!res.ok) return null;

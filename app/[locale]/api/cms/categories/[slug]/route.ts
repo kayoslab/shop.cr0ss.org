@@ -44,6 +44,7 @@ export async function GET(
   }
   
   const data = await cachedFetchCategory(slug, typedLocale, preview);
+
   if (!data) return new NextResponse('Not found', { status: 404 });
 
   // Let unstable_cache handle caching; keep the HTTP response non-cacheable at CDN

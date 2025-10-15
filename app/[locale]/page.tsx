@@ -97,7 +97,7 @@ async function fetchRecommended(locale: SupportedLocale, limit = 4): Promise<Pro
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
   const qs = new URLSearchParams({ limit: `${limit}`, currency: localeToCurrency(locale), country: localeToCountry(locale) }).toString();
 
-  const res = await fetch(`${base}/api/products${qs ? `?${qs}` : ''}`, {
+  const res = await fetch(`${base}/${locale}/api/products${qs ? `?${qs}` : ''}`, {
     next: { tags: [`products:${locale}`] },
   });
   if (!res.ok) return [];

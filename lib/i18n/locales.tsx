@@ -10,6 +10,11 @@ export const DEFAULT_LOCALE: SupportedLocale = 'de-DE';
 export const DEFAULT_CURRENCY: SupportedCurrency = 'EUR';
 export const DEFAULT_COUNTRY: SupportedCountry = 'DE';
 
+const LANGUAGE_HEADER_MAP: Array<{ tag: string; q: number; index: number }> = [
+  { tag: 'de-DE', q: 1.0, index: 0 },
+  { tag: 'en-GB', q: 0.9, index: 0 }
+];
+
 const LABEL: Record<SupportedLocale, string> = {
   'de-DE': 'Deutsch (DE)',
   'en-GB': 'English (UK)',
@@ -50,4 +55,33 @@ export function currencyToLocale(currency: string): SupportedLocale {
 
 export function otherLocale(locale: SupportedLocale): SupportedLocale {
   return locale === 'de-DE' ? 'en-GB' : 'de-DE';
+}
+
+function normalizeLocaleTag(tag: string): string {
+  const [lang, region] = tag.trim().split('-');
+  if (!lang) return '';
+  return region ? `${lang.toLowerCase()}-${region.toUpperCase()}` : lang.toLowerCase();
+}
+
+function parseAcceptLanguage(languageHeader: string): Array<{ tag: string; q: number; index: number }> {
+  if (languageHeader == '*') return LANGUAGE_HEADER_MAP;
+  if (languageHeader == '') return LANGUAGE_HEADER_MAP;
+
+  return languageHeader
+    .split(',')
+    .map((part, index) => {
+      const [rawTag, ...params] = part.trim().split(';');
+      const tag = normalizeLocaleTag(rawTag);
+      let q = 1.0;
+      for (const p of params) {
+        const [k, v] = p.split('=').map((s) => s.trim());
+        if (k === 'q') {
+          const num = Number(v);
+          if (!Number.isNaN(num)) q = num;
+        }
+      }
+      return { tag, q, index };
+    })
+    .filter((x) => x.tag !== '')
+    .sort((a, b) => (b.q === a.q ? a.index - b.index : b.q - a.q));
 }

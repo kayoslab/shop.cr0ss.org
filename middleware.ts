@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { SUPPORTED_LOCALES, DEFAULT_LOCALE } from '@/lib/i18n/locales';
+import { SUPPORTED_LOCALES, acceptLanguageToLocale } from '@/lib/i18n/locales';
 
 export const config = { matcher: ['/:path*'] };
 
@@ -39,13 +39,16 @@ export default function middleware(req: NextRequest) {
 
   const { pathname } = req.nextUrl;
   if (pathname.startsWith('/_next') || pathname.startsWith('/assets')) return;
+
   const seg = pathname.split('/')[1];
   if (!SUPPORTED_LOCALES.includes(seg as any)) {
+    const acceptHeader = req.headers.get('accept-language') || '';
+    const parsed = acceptLanguageToLocale(acceptHeader);
+
     const url = req.nextUrl.clone();
-    url.pathname = `/${DEFAULT_LOCALE}${pathname}`;
+    url.pathname = `/${parsed}${pathname}`;
     return NextResponse.redirect(url);
   }
-
 
   return res;
 }

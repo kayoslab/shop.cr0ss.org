@@ -1,47 +1,56 @@
 import './globals.css';
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from '@vercel/analytics/next';
 import Nav from '@/components/Nav';
-import { cookies, headers } from 'next/headers';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
+import { headers } from 'next/headers';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 3600;
 
 async function fetchCategories(locale: 'de-DE' | 'en-GB'): Promise<CategoryDTO[]> {
-  const h = headers();
-  const proto = (await h).get('x-forwarded-proto') ?? 'http';
-  const host  = (await h).get('host');
-  const base  = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : 'http://localhost:3000');
-  const cookie = (await h).get('cookie') ?? '';
+  try {
+    const h = headers();
+    const proto = (await h).get('x-forwarded-proto') ?? 'http';
+    const host = (await h).get('host');
+    const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
+    
+    const res = await fetch(`${base}/${locale}/api/categories`, {
+      next: { revalidate: 3600, tags: [`categories:${locale}`] },
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { items?: CategoryDTO[] } | CategoryDTO[] | null | undefined;
 
-  const res = await fetch(`${base}/api/categories`, {
-    cache: 'no-store',
-    // next: { revalidate: 3600, tags: ['categories', locale] },
-    headers: {
-      cookie,
-      'x-locale': locale,
-    },
-  });
+    const items = Array.isArray((data as any)?.items)
+      ? ((data as any).items as CategoryDTO[])
+      : Array.isArray(data)
+      ? (data as CategoryDTO[])
+      : [];
 
-  if (!res.ok) return [];
-  const data = (await res.json()) as { items: CategoryDTO[] };
-  return data.items;
+    return items;
+  } catch {
+    return [];
+  }
 }
 
 function topLevel(categories: CategoryDTO[]): CategoryDTO[] {
-  return categories.filter(c => c.parentId === null);
+  if (!Array.isArray(categories)) return [];
+  return categories.filter((c) => c?.parentId === null);
 }
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {  
-  const c = cookies();
-  const cookieLocale = ((await c).get('locale')?.value ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB') as 'de-DE' | 'en-GB';
-  const categories = await fetchCategories(cookieLocale);
+export default async function RootLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: 'de-DE' | 'en-GB' }>;
+}) {
+  const { locale } = await params;
+  const categories = await fetchCategories(locale);
   const top = topLevel(categories);
 
   return (
-    <html lang={cookieLocale} className="h-full">
+    <html lang={locale} className="h-full">
       <body className="min-h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-        <Nav topLevel={top} />
+        <Nav topLevel={top} locale={locale} />
         {children}
         <Analytics />
       </body>

@@ -10,20 +10,20 @@ async function _fetchCategories(locale: string): Promise<CategoryDTO[]> {
   return buildCategoryTree(list, locale);
 }
 
-const cachedFetchCategories = (locale: string) =>
+const cached = (locale: 'de-DE'|'en-GB') =>
   cache(_fetchCategories, ['api-categories', locale], {
-    tags: ['categories'],
-    revalidate: 60 * 10,
-  })(locale);
+    tags: [`categories:${locale}`],
+    revalidate: 3600,
+  }
+)(locale);
 
-export async function GET(request: NextRequest) {
-  const c = cookies();
-  const cookieLocale = ((await c).get('locale')?.value ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB') as 'de-DE' | 'en-GB';
-  
-  const data = await cachedFetchCategories(cookieLocale);
+export async function GET(
+  _req: NextRequest,
+  ctx: { params: Promise<{ locale: 'de-DE'|'en-GB' }> }
+) {
+  const { locale } = await ctx.params;
+  const data = await cached(locale);
 
-  return NextResponse.json(
-    { items: data },
-    { headers: { 'Cache-Control': 'public, max-age=0, s-maxage=600, stale-while-revalidate=60' } }
-  );
+  // Prefer relying on unstable_cache; avoid CDN caching here
+  return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
 }

@@ -1,126 +1,120 @@
-import { headers } from 'next/headers';
 import Hero from '@/components/Hero';
 import ProductSlider from '@/components/ProductSlider';
 import { CategoryTiles } from '@/components/CategoryTiles';
 import type { ProductDTO } from '@/lib/ct/dto/product';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
-import type { CategoryCMSContentDTO } from '@/app/api/cms/home/categories/[slug]/route';
+import type { CategoryCMSContentDTO } from '@/app/[locale]/api/cms/home/categories/[slug]/route';
+import type { HomeDTO } from '@/lib/contentful/dto/home';
+import { headers } from 'next/headers';
 
 export const revalidate = 300;
 
-async function fetchHome(): Promise<import('@/lib/contentful/dto/home').HomeDTO | null> {
+type Locale = 'de-DE' | 'en-GB';
+type Params = { locale: Locale };
+type ListResponse = { items: ProductDTO[]; total: number; limit: number; offset: number };
+
+async function fetchHome(locale: Locale): Promise<HomeDTO | null> {
   const h = headers();
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  const preview = process.env.CONTENTFUL_PREVIEW_ENABLED === 'true' ? '1' : '0';
-  const cookie = (await h).get('cookie') ?? '';
-
-  const res = await fetch(`${base}/api/cms/home`, {
-    headers: { 
-      cookie,
-      'x-preview': preview 
-    },
-    next: { 
-      revalidate,
-      tags: ['cms:home'] 
-    },
-  });
   
-  if (!res.ok) return null;
-  return res.json();
-}
-
-interface ListResponse {
-  items: ProductDTO[];
-  total: number;
-  limit: number;
-  offset: number;
-}
-
-function flattenCategories(categories: CategoryDTO[]): CategoryDTO[] {
-  const flat: CategoryDTO[] = [];
-  categories.forEach(c => {
-    flat.push(c);
-    if (c.children) {
-      flat.push(...flattenCategories(c.children));
-    }
+  const res = await fetch(`${base}/${locale}/api/cms/home`, {
+    next: { revalidate, tags: [`cms:home:${locale}`] },
   });
-  return flat;
-}
-
-async function fetchCategoryContentFromCMS(slug: string): Promise<CategoryCMSContentDTO | null> {
-  const h = headers();
-  const proto = (await h).get('x-forwarded-proto') ?? 'http';
-  const host = (await h).get('host');
-  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  const cookie = (await h).get('cookie') ?? '';
-  const res = await fetch(`${base}/api/cms/home/categories/${slug}`, 
-    { 
-      next: { tags: ['categories'] },
-      headers: { cookie },
-    }
-  );
   if (!res.ok) return null;
-  return res.json();
+  return res.json() as Promise<HomeDTO>;
 }
 
-async function fetchCategories(featuredSlugs?: string[], sliced: number = 4): Promise<CategoryDTO[]> {
+async function fetchCategoryContentFromCMS(locale: Locale, slug: string): Promise<CategoryCMSContentDTO | null> {
   const h = headers();
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  const cookie = (await h).get('cookie') ?? '';
-  const res = await fetch(`${base}/api/categories`, { 
-    next: { tags: ['categories'] },
-    headers: { cookie },
+  
+  const res = await fetch(`${base}/${locale}/api/cms/home/categories/${slug}`, {
+    next: { tags: [`categories:${locale}`] },
+  });
+  if (!res.ok) return null;
+  return res.json() as Promise<CategoryCMSContentDTO>;
+}
+
+function flattenCategories(categories?: CategoryDTO[] | null): CategoryDTO[] {
+  if (!Array.isArray(categories)) return [];
+  const out: CategoryDTO[] = [];
+  for (const raw of categories) {
+    // Normalize node shape
+    const node: CategoryDTO = {
+      ...raw,
+      children: Array.isArray(raw?.children) ? raw.children : [],
+    };
+    out.push(node);
+    if (node.children.length) {
+      out.push(...flattenCategories(node.children));
+    }
+  }
+  return out;
+}
+
+async function fetchCategories(locale: Locale, featuredSlugs?: string[], sliced = 8): Promise<CategoryDTO[]> {
+  const h = headers();
+  const proto = (await h).get('x-forwarded-proto') ?? 'http';
+  const host = (await h).get('host');
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
+  
+  const res = await fetch(`${base}/${locale}/api/categories`, {
+    next: { revalidate: 3600, tags: [`categories:${locale}`] },
   });
   if (!res.ok) return [];
-  const data = (await res.json()) as { items: CategoryDTO[] };
-  const items = await data.items;
+  const payload = await res.json();
+    const items: CategoryDTO[] = Array.isArray(payload?.items)
+      ? (payload.items as CategoryDTO[])
+      : Array.isArray(payload)
+      ? (payload as CategoryDTO[])
+      : [];
 
-  const flat = flattenCategories(items);
-  if (sliced <= 0) sliced = 8;
-  const chosen = featuredSlugs && featuredSlugs.length
-    ? flat.filter(c => featuredSlugs.includes(c.slug))
-    : flat.slice(0, sliced);
+    const flat = flattenCategories(items);
 
-  // Enrich categories with content from CMS
-  const enriched: CategoryDTO[] = [];
-  for (const c of chosen) {
-    // Fetch category content from CMS to enrich the category data
-    await fetchCategoryContentFromCMS(c.slug).then(content => {
-      if (content) {
-        c.content = content;
-      }
-      enriched.push(c);
-    }).catch(() => {
-      // Ignore errors and keep existing category data
-    });
-  };
+    const chosen =
+      featuredSlugs?.length
+        ? flat.filter((c) => featuredSlugs.includes(c.slug))
+        : flat.slice(0, Math.max(1, sliced));
+
+  // Enrich in parallel
+  const enriched = await Promise.all(
+    chosen.map(async (c) => {
+      const content = await fetchCategoryContentFromCMS(locale, c.slug).catch(() => null);
+      return content ? { ...c, content } : c;
+    })
+  );
   return enriched;
 }
 
-async function fetchRecommended(limit = 4): Promise<ProductDTO[]> {
+async function fetchRecommended(locale: Locale, limit = 4): Promise<ProductDTO[]> {
   const h = headers();
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  const cookie = (await h).get('cookie') ?? '';
-  const res = await fetch(`${base}/api/products?limit=${limit}`, 
-    { 
-      next: { tags: ['products'] },
-      headers: { cookie },
-    }
-  );
+  
+  const res = await fetch(`${base}/${locale}/api/products?limit=${limit}`, {
+    next: { tags: [`products:${locale}`] },
+  });
   if (!res.ok) return [];
   const data = (await res.json()) as ListResponse;
   return data.items;
 }
 
-export default async function HomePage() {
-  const home = await fetchHome();
-  const recommendedItems = await fetchRecommended();
+export default async function HomePage({
+  params,
+}: {
+  params: Promise<Params>; // Next 15: await params
+}) {
+  const { locale } = await params;
+  const home = await fetchHome(locale);
+  const [recommendedItems, categories] = await Promise.all([
+    fetchRecommended(locale),
+    fetchCategories(locale, home?.featuredCategorySlugs, 8),
+  ]);
 
   return (
     <main className="min-h-screen">
@@ -131,10 +125,7 @@ export default async function HomePage() {
         ctaLink={home?.hero.ctaLink}
         imageUrl={home?.hero.imageUrl}
       />
-      <CategoryTiles
-        heading={home?.showcaseHeading}
-        categories={await fetchCategories(home?.featuredCategorySlugs, 8)}
-      />
+      <CategoryTiles heading={home?.showcaseHeading} categories={categories} />
       <ProductSlider items={recommendedItems} heading={home?.recommendedHeading} />
     </main>
   );

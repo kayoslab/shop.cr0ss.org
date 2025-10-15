@@ -14,7 +14,11 @@ export async function POST(request: NextRequest) {
     // Get content type from the webhook payload
     const contentType = body.sys?.contentType?.sys?.id || 'unknown';
     // Revalidate the relevant tag
-    revalidateTag(`cms:${contentType}`);
+    for (const locale of ['de-DE','en-GB']) {
+        // revalidateTag(`plp:cat:${slug}:${locale}`);
+        // revalidateTag(`categories:${locale}`);
+        revalidateTag(`cms:home:${locale}`);
+    }
 
     return NextResponse.json({ ok: true, revalidated: [`cms:${contentType}`] });
 }

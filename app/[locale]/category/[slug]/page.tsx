@@ -20,6 +20,7 @@ async function fetchCategoryPLP(slug: string): Promise<ListResponse | null> {
   const host = (await h).get('host');
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
   const cookie = (await h).get('cookie') ?? '';
+  
   const res = await fetch(`${base}/api/categories/${slug}/products`, {
     next: { 
       revalidate, 
@@ -33,8 +34,33 @@ async function fetchCategoryPLP(slug: string): Promise<ListResponse | null> {
   return res.json() as Promise<ListResponse>;
 }
 
-export default async function CategoryPLP({ params }: { params: { slug: string } }) {
-  const data = await fetchCategoryPLP((await params).slug);
+export default async function CategoryPage({
+  params, searchParams,
+}: {
+  params: { locale: 'de-DE'|'en-GB'; slug: string };
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
+  const { locale, slug } = await params;
+  const sp = await searchParams;
+  const h = headers();
+
+  const proto = (await h).get('x-forwarded-proto') ?? 'http';
+  const host = (await h).get('host');
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
+
+  const limit  = (typeof sp.limit  === 'string' ? sp.limit  : '100');
+  const offset = (typeof sp.offset === 'string' ? sp.offset : '0');
+  const currency = (typeof sp.currency === 'string' ? sp.currency : (locale === 'de-DE' ? 'EUR' : 'GBP'));
+  const country  = (typeof sp.country  === 'string' ? sp.country  : (locale === 'de-DE' ? 'DE'  : 'GB'));
+
+  const qs = new URLSearchParams({ limit, offset, currency, country }).toString();
+
+  const res = await fetch(`${base}/${locale}/api/categories/${slug}/products?${qs}`, {
+    next: { revalidate: 600, tags: [`plp:cat:${slug}:${locale}`] },
+  });
+
+  if (!res.ok) return notFound();
+  const data = await res.json() as ListResponse;
   if (!data) return notFound();
 
   return (

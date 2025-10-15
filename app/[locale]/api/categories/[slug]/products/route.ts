@@ -1,47 +1,51 @@
+// app/[locale]/api/categories/[slug]/products/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { unstable_cache as cache } from 'next/cache';
-import type {
-  Category,
-  ProductProjectionPagedQueryResponse,
-} from '@commercetools/platform-sdk';
-import {
-  appGetCategoryBySlug,
-  appListProductsByCategoryId,
-} from '@/lib/ct/categories';
-import { type ProductDTO } from '@/lib/ct/dto/product';
+import { appGetCategoryBySlug, appListProductsByCategoryId } from '@/lib/ct/categories';
 import { mapProductToDTO } from '@/lib/ct/products';
-import { cookies } from 'next/headers';
-
-interface ListResponse {
-  categoryId: string;
-  categorySlug: string;
-  items: ProductDTO[];
-  total: number;
-  limit: number;
-  offset: number;
-}
+import type { Category, ProductProjectionPagedQueryResponse } from '@commercetools/platform-sdk';
 
 async function _fetchCategoryPLP(
+  locale: 'de-DE'|'en-GB',
   slug: string,
-  qsString: string,
-  locale: string,
+  qs: string,
   currency: string,
   country: string
-): Promise<ListResponse | null> {
-  const searchParams = new URLSearchParams(qsString);
+) {
+  const searchParams = new URLSearchParams(qs);
   const limit = Math.max(1, Math.min(50, Number(searchParams.get('limit')) || 12));
   const offset = Math.max(0, Number(searchParams.get('offset')) || 0);
 
-  const category: Category | null = await appGetCategoryBySlug(slug, locale);
-  if (!category) return null;
+  // Try current-locale slug
+  let category: Category | null = await appGetCategoryBySlug(slug, locale);
+
+  // If not found, try the other supported locale and redirect to the canonical slug
+  if (!category) {
+    const otherLocale = (locale === 'de-DE' ? 'en-GB' : 'de-DE') as 'de-DE'|'en-GB';
+    const foundInOther = await appGetCategoryBySlug(slug, otherLocale);
+
+    if (foundInOther) {
+      // compute the canonical slug for the active locale
+      const localizedSlug = foundInOther.slug?.[locale] ?? slug;
+
+      // tell the caller to re-request the locale-correct URL (fetch follows redirects)
+      const redirectQS = searchParams.toString();
+      const redirectPath = `/${locale}/api/categories/${encodeURIComponent(localizedSlug)}/products${redirectQS ? `?${redirectQS}` : ''}`;
+      // IMPORTANT: return the redirect from here. The caller (your page fetch) will follow it.
+      throw new Response(null, { status: 308, headers: { Location: redirectPath } });
+    }
+
+    // Not found in any locale
+    return null;
+  }
 
   const data: ProductProjectionPagedQueryResponse = await appListProductsByCategoryId({
-    categoryId: category.id,
-    limit,
-    offset,
+    categoryId: category.id, limit, offset,
   });
 
-  const items = (data.results ?? []).map((p) => mapProductToDTO(p, locale, { currency: currency, country: country }));
+  const items = (data.results ?? []).map((p) =>
+    mapProductToDTO(p, locale, { currency, country })
+  );
 
   return {
     categoryId: category.id,
@@ -53,31 +57,37 @@ async function _fetchCategoryPLP(
   };
 }
 
-const cachedFetchCategoryPLP = (slug: string, qs: string, locale: string, currency: string, country: string) =>
-  cache(_fetchCategoryPLP, ['api-plp', slug, locale, qs, currency, country], {
-    tags: [`plp:cat:${slug}`],
+const cached = (locale: 'de-DE'|'en-GB', slug: string, qs: string, currency: string, country: string) =>
+  cache(_fetchCategoryPLP, ['api-plp', locale, slug, qs, currency, country], {
+    tags: [`plp:cat:${slug}:${locale}`],
     revalidate: 300,
-  })(slug, qs, locale, currency, country);
+  })(locale, slug, qs, currency, country);
 
 export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ slug: string }> }
+  req: NextRequest,
+  ctx: { params: Promise<{ locale: 'de-DE' | 'en-GB'; slug: string }> }
 ) {
-  const { slug } = await context.params;
-  
-  const c = cookies();
-  const cookieLocale = ((await c).get('locale')?.value ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB') as 'de-DE' | 'en-GB';
-  const cookieCurrency = ((await c).get('currency')?.value ?? process.env.DEMO_DEFAULT_CURRENCY ?? 'GBP') as 'EUR' | 'GBP';
-  const cookieCountry = ((await c).get('country')?.value ?? process.env.DEMO_DEFAULT_COUNTRY ?? 'GB') as 'DE' | 'GB';
+  const { locale, slug } = await ctx.params;
+  const url = new URL(req.url);
+  const currency = url.searchParams.get('currency') ?? (locale === 'de-DE' ? 'EUR' : 'GBP');
+  const country  = url.searchParams.get('country')  ?? (locale === 'de-DE' ? 'DE'  : 'GB');
 
-  const url = new URL(request.url);
-  const data = await cachedFetchCategoryPLP(slug, url.searchParams.toString(), cookieLocale, cookieCurrency, cookieCountry);
+  try {
+    const data = await cached(locale, slug, url.searchParams.toString(), currency, country);
+    if (!data) return new NextResponse('Not found', { status: 404 });
 
-  if (!data) return new NextResponse('Not found', { status: 404 });
-
-  return NextResponse.json(data, {
-    headers: {
-      'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=60',
-    },
-  });
+    // Prefer letting unstable_cache handle caching
+    // return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
+    
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=60',
+        'Vary': 'accept-encoding,locale,currency,country',
+      },
+    });
+  } catch (e) {
+    // Bubble the redirect we threw above
+    if (e instanceof Response && e.status === 308 && e.headers.get('Location')) return e;
+    throw e;
+  }
 }

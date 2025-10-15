@@ -1,10 +1,10 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
 type SupportedLocale = 'de-DE' | 'en-GB';
-
+const SUPPORTED = ['de-DE','en-GB'];
 const LABEL: Record<SupportedLocale, string> = {
   'de-DE': 'Deutsch (DE)',
   'en-GB': 'English (UK)',
@@ -17,26 +17,15 @@ const FLAG: Record<SupportedLocale, string> = {
 
 export default function LangSwitcher({ current }: { current: SupportedLocale }) {
   const router = useRouter();
+  const pathname = usePathname();
+
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  async function setLocale(locale: SupportedLocale) {
-    if (locale === current) {
-      setOpen(false);
-      return;
-    }
-    
-    await fetch('/api/locale', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ locale }),
-      credentials: 'include',
-      cache: 'no-store',
-    });
-    
-    // Refresh the whole tree so nav + page content re-read cookies()
-    startTransition(() => router.refresh());
-    setOpen(false);
+  function switchTo(next: 'de-DE'|'en-GB') {
+    const parts = pathname.split('/');
+    parts[1] = next;
+    router.push(parts.join('/'));
   }
 
   return (
@@ -75,7 +64,7 @@ export default function LangSwitcher({ current }: { current: SupportedLocale }) 
               key={loc}
               role="menuitem"
               disabled={isPending}
-              onClick={() => setLocale(loc)}
+              onClick={() => switchTo(loc)}
               className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800 ${
                 loc === current ? 'font-medium' : ''
               }`}

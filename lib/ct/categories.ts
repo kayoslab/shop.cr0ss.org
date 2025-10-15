@@ -1,6 +1,7 @@
 import type { Category, CategoryPagedQueryResponse, ProductProjectionPagedQueryResponse } from '@commercetools/platform-sdk';
 import { apiRootApp } from './client';
 import { categoryRecordToDTO, type CategoryDTO } from './dto/category';
+import { DEFAULT_LOCALE, SupportedLocale } from '../i18n/locales';
 
 const esc = (s: string) => s.replaceAll('"', '\\"');
 
@@ -11,8 +12,7 @@ export async function appGetCategoryBySlug(
   slug: string,
   locale: string
 ): Promise<Category | null> {
-  const fallbackLocale = process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB';
-  const where = `slug(${locale}="${esc(slug)}") or slug(${fallbackLocale}="${esc(slug)}")`;
+  const where = `slug(${locale}="${esc(slug)}") or slug(${DEFAULT_LOCALE}="${esc(slug)}")`;
 
   const res = await apiRootApp
     .categories()
@@ -58,7 +58,7 @@ export async function appListCategories(max = 200): Promise<Category[]> {
 /**
  * Build a tree of CategoryDTO from a flat list.
  */
-export function buildCategoryTree(categories: Category[], locale: string): CategoryDTO[] {
+export function buildCategoryTree(categories: Category[], locale: SupportedLocale): CategoryDTO[] {
   const base = categories.map(c => ({ ...categoryRecordToDTO(c, locale), children: [] as CategoryDTO[] }));
 
   const byId = new Map<string, CategoryDTO>(base.map(c => [c.id, c]));

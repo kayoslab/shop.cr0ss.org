@@ -6,14 +6,14 @@ import type { CategoryDTO } from '@/lib/ct/dto/category';
 import type { CategoryCMSContentDTO } from '@/app/[locale]/api/cms/home/categories/[slug]/route';
 import type { HomeDTO } from '@/lib/contentful/dto/home';
 import { headers } from 'next/headers';
+import { SupportedLocale } from '@/lib/i18n/locales';
 
 export const revalidate = 300;
 
-type Locale = 'de-DE' | 'en-GB';
-type Params = { locale: Locale };
+type Params = { locale: SupportedLocale };
 type ListResponse = { items: ProductDTO[]; total: number; limit: number; offset: number };
 
-async function fetchHome(locale: Locale): Promise<HomeDTO | null> {
+async function fetchHome(locale: SupportedLocale): Promise<HomeDTO | null> {
   const h = headers();
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');
@@ -26,7 +26,7 @@ async function fetchHome(locale: Locale): Promise<HomeDTO | null> {
   return res.json() as Promise<HomeDTO>;
 }
 
-async function fetchCategoryContentFromCMS(locale: Locale, slug: string): Promise<CategoryCMSContentDTO | null> {
+async function fetchCategoryContentFromCMS(locale: SupportedLocale, slug: string): Promise<CategoryCMSContentDTO | null> {
   const h = headers();
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');
@@ -56,7 +56,7 @@ function flattenCategories(categories?: CategoryDTO[] | null): CategoryDTO[] {
   return out;
 }
 
-async function fetchCategories(locale: Locale, featuredSlugs?: string[], sliced = 8): Promise<CategoryDTO[]> {
+async function fetchCategories(locale: SupportedLocale, featuredSlugs?: string[], sliced = 8): Promise<CategoryDTO[]> {
   const h = headers();
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');
@@ -90,7 +90,7 @@ async function fetchCategories(locale: Locale, featuredSlugs?: string[], sliced 
   return enriched;
 }
 
-async function fetchRecommended(locale: Locale, limit = 4): Promise<ProductDTO[]> {
+async function fetchRecommended(locale: SupportedLocale, limit = 4): Promise<ProductDTO[]> {
   const h = headers();
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');

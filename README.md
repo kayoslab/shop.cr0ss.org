@@ -99,7 +99,6 @@ Create `.env.local` (sample—adjust to your project/region):
 ```
 # Base
 NODE_ENV=development
-DEMO_DEFAULT_LOCALE=en-GB
 NEXT_PUBLIC_BASE_PATH=http://localhost:3000
 
 # commercetools

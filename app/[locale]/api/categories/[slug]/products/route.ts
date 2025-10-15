@@ -4,9 +4,10 @@ import { unstable_cache as cache } from 'next/cache';
 import { appGetCategoryBySlug, appListProductsByCategoryId } from '@/lib/ct/categories';
 import { mapProductProjectionToDTO } from '@/lib/ct/products';
 import type { Category, ProductProjectionPagedQueryResponse } from '@commercetools/platform-sdk';
+import { SupportedLocale, localeToCountry, localeToCurrency, otherLocale } from '@/lib/i18n/locales';
 
 async function _fetchCategoryPLP(
-  locale: 'de-DE'|'en-GB',
+  locale: SupportedLocale,
   slug: string,
   qs: string,
   currency: string,
@@ -17,12 +18,11 @@ async function _fetchCategoryPLP(
   const offset = Math.max(0, Number(searchParams.get('offset')) || 0);
 
   // Try current-locale slug
-  let category: Category | null = await appGetCategoryBySlug(slug, locale);
+  const category: Category | null = await appGetCategoryBySlug(slug, locale);
 
   // If not found, try the other supported locale and redirect to the canonical slug
   if (!category) {
-    const otherLocale = (locale === 'de-DE' ? 'en-GB' : 'de-DE') as 'de-DE'|'en-GB';
-    const foundInOther = await appGetCategoryBySlug(slug, otherLocale);
+    const foundInOther = await appGetCategoryBySlug(slug, otherLocale(locale));
 
     if (foundInOther) {
       // compute the canonical slug for the active locale
@@ -57,7 +57,7 @@ async function _fetchCategoryPLP(
   };
 }
 
-const cached = (locale: 'de-DE'|'en-GB', slug: string, qs: string, currency: string, country: string) =>
+const cached = (locale: SupportedLocale, slug: string, qs: string, currency: string, country: string) =>
   cache(_fetchCategoryPLP, ['api-plp', locale, slug, qs, currency, country], {
     tags: [`plp:cat:${slug}:${locale}`],
     revalidate: 300,
@@ -65,15 +65,21 @@ const cached = (locale: 'de-DE'|'en-GB', slug: string, qs: string, currency: str
 
 export async function GET(
   req: NextRequest,
-  ctx: { params: Promise<{ locale: 'de-DE' | 'en-GB'; slug: string }> }
+  ctx: { params: Promise<{ locale: string; slug: string }> }
 ) {
   const { locale, slug } = await ctx.params;
+  const typedLocale = (locale === 'de-DE' ? 'de-DE' : 'en-GB') as SupportedLocale;
+
+  if (typedLocale !== locale) {
+    return new NextResponse('Locale not supported', { status: 400 });
+  }
+
   const url = new URL(req.url);
-  const currency = url.searchParams.get('currency') ?? (locale === 'de-DE' ? 'EUR' : 'GBP');
-  const country  = url.searchParams.get('country')  ?? (locale === 'de-DE' ? 'DE'  : 'GB');
+  const currency = url.searchParams.get('currency') ?? localeToCurrency(typedLocale);
+  const country  = url.searchParams.get('country')  ?? localeToCountry(typedLocale);
 
   try {
-    const data = await cached(locale, slug, url.searchParams.toString(), currency, country);
+    const data = await cached(typedLocale, slug, url.searchParams.toString(), currency, country);
     if (!data) return new NextResponse('Not found', { status: 404 });
 
     // Prefer letting unstable_cache handle caching

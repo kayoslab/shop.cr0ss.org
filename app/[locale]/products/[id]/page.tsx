@@ -2,6 +2,7 @@ import { headers } from 'next/headers';
 import VariantPickerClient from '@/components/pdp/VariantPickerClient';
 import AddToBasketClient from '@/components/pdp/AddToBasketClient';
 import type { ProductProjectionDTO } from '@/lib/ct/dto/product';
+import { SupportedLocale, localeToCountry, localeToCurrency, SUPPORTED_LOCALES } from '@/lib/i18n/locales';
 
 export const runtime = 'edge';
 export const revalidate = 0;
@@ -24,12 +25,12 @@ function formatMoney(m?: Money, discounted?: Money) {
   return <span className="text-2xl font-semibold">{base} {code}</span>;
 }
 
-async function fetchProduct(id: string, locale: string) {
+async function fetchProduct(id: string, locale: SupportedLocale): Promise<ProductProjectionDTO | null> {
   const h = headers();
   const proto = (await h).get('x-forwarded-proto') ?? 'http';
   const host = (await h).get('host');
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  const qs = new URLSearchParams({ currency: (locale === 'de-DE' ? 'EUR' : 'GBP'), country: (locale === 'de-DE' ? 'DE'  : 'GB') }).toString();
+  const qs = new URLSearchParams({ currency: localeToCurrency(locale), country: localeToCountry(locale) }).toString();
 
   const res = await fetch(`${base}/api/products/${id}${qs ? `?${qs}` : ''}`, 
     { cache: 'no-store' }
@@ -48,8 +49,17 @@ export default async function ProductDetailPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale, id } = await params;
-  const product = await fetchProduct(id, locale);
+  const localeTyped = locale as SupportedLocale;
+  if (!SUPPORTED_LOCALES.includes(localeTyped)) {
+    return (
+      <main className="mx-auto max-w-6xl px-6 py-16">
+        <h1 className="text-2xl font-semibold">Invalid locale</h1>
+        <p className="mt-2 text-gray-600">Please check the link or go back to Products.</p>
+      </main>
+    );
+  }
 
+  const product = await fetchProduct(id, localeTyped);
   if (!product) {
     return (
       <main className="mx-auto max-w-6xl px-6 py-16">

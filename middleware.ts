@@ -1,79 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { SUPPORTED_LOCALES, DEFAULT_LOCALE } from '@/lib/i18n/locales';
 
 export const config = { matcher: ['/:path*'] };
 
-const SUPPORTED = ['de-DE', 'en-GB'] as const;
-type SupportedLocale = (typeof SUPPORTED)[number];
-const DEFAULT_LOCALE: SupportedLocale = 'en-GB';
-
-function normalizeLocaleTag(tag: string): string {
-  // "de-at" -> "de-AT", "en" -> "en"
-  const [lang, region] = tag.trim().split('-');
-  if (!lang) return '';
-  return region ? `${lang.toLowerCase()}-${region.toUpperCase()}` : lang.toLowerCase();
-}
-
-function parseAcceptLanguage(languageHeader: string): Array<{ tag: string; q: number; index: number }> {
-  // Handle wildcard: accept any, prefer default and fallback
-  if (languageHeader == '*') return [
-    { tag: process.env.DEMO_DEFAULT_LOCALE ?? 'de-DE', q: 1.0, index: 0 },
-    { tag: process.env.FALLBACK_LOCALE ?? 'en-GB', q: 0.9, index: 0 }
-  ];
-
-  // e.g. "de-AT,de;q=0.9,en-GB;q=0.8,en;q=0.7"
-  return languageHeader
-    .split(',')
-    .map((part, index) => {
-      const [rawTag, ...params] = part.trim().split(';');
-      const tag = normalizeLocaleTag(rawTag);
-      let q = 1.0;
-      for (const p of params) {
-        const [k, v] = p.split('=').map((s) => s.trim());
-        if (k === 'q') {
-          const num = Number(v);
-          if (!Number.isNaN(num)) q = num;
-        }
-      }
-      return { tag, q, index };
-    })
-    .filter((x) => x.tag !== '')
-    .sort((a, b) => (b.q === a.q ? a.index - b.index : b.q - a.q));
-}
-
-function mapBaseToSupported(base: string): SupportedLocale | null {
-  if (base === 'de') return 'de-DE';
-  if (base === 'en') return 'en-GB';
-  return null;
-}
-
-// RFC 4647 "lookup" style: try exact, then strip region to base
-function pickSupportedLocale(accepted: string[]): SupportedLocale {
-  for (const raw of accepted) {
-    const tag = normalizeLocaleTag(raw);
-    if (!tag) continue;
-
-    if (SUPPORTED.includes(tag as SupportedLocale)) {
-      return tag as SupportedLocale;
-    }
-
-    const base = tag.split('-')[0];
-    const mapped = mapBaseToSupported(base);
-    if (mapped) return mapped;
-  }
-  return DEFAULT_LOCALE;
-}
-
-function currencyFor(locale: SupportedLocale): 'EUR' | 'GBP' {
-  return locale === 'de-DE' ? 'EUR' : 'GBP';
-}
-
-function countryFor(locale: SupportedLocale): 'DE' | 'GB' {
-  return locale === 'de-DE' ? 'DE' : 'GB';
-}
-
-export default function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-
+function setCTCookie(req: NextRequest, res: NextResponse) {
   let anon = req.cookies.get('ct_anonymous_id')?.value;
   if (!anon) {
     anon = crypto.randomUUID();
@@ -85,61 +15,37 @@ export default function middleware(req: NextRequest) {
       httpOnly: false,
     });
   }
+}
 
-  const cookieLocale = (req.cookies.get('locale')?.value ?? process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB') as 'de-DE' | 'en-GB';
+function setVariant(req: NextRequest, res: NextResponse) {
+  let variant = req.cookies.get('variant')?.value;
+  if (!variant) {
+    variant = req.nextUrl.pathname.length % 2 === 0 ? 'A' : 'B';
+    res.cookies.set('variant', variant, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: false,
+    });
+  }
+}
+
+export default function middleware(req: NextRequest) {
+  const res = NextResponse.next();
+  
+  setCTCookie(req, res);
+  setVariant(req, res);
+
   const { pathname } = req.nextUrl;
-  // Skip static files and Next internals
   if (pathname.startsWith('/_next') || pathname.startsWith('/assets')) return;
-
   const seg = pathname.split('/')[1];
-  if (!SUPPORTED.includes(seg as any)) {
+  if (!SUPPORTED_LOCALES.includes(seg as any)) {
     const url = req.nextUrl.clone();
-    url.pathname = `/${process.env.DEMO_DEFAULT_LOCALE ?? 'en-GB'}${pathname}`;
+    url.pathname = `/${DEFAULT_LOCALE}${pathname}`;
     return NextResponse.redirect(url);
   }
 
-  // Cookie handling
-  let locale: SupportedLocale;
-
-  if (cookieLocale && SUPPORTED.includes(cookieLocale)) {
-    locale = cookieLocale;
-  } else {
-    const acceptHeader = req.headers.get('accept-language') || '';
-    const parsed = parseAcceptLanguage(acceptHeader);
-    const accepted = parsed.map((p) => p.tag);
-    locale = pickSupportedLocale(accepted);
-
-    res.cookies.set('locale', locale, {
-      path: '/',
-      maxAge: 60 * 60 * 24 * 30,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: false,
-    });
-    res.cookies.set('country', countryFor(locale), {
-      path: '/',
-      maxAge: 60 * 60 * 24 * 30,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: false,
-    });
-    res.cookies.set('currency', currencyFor(locale), {
-      path: '/',
-      maxAge: 60 * 60 * 24 * 30,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: false,
-    });
-  }
-
-  const currency = currencyFor(locale);
-  const country = countryFor(locale);
-  const variant = req.nextUrl.pathname.length % 2 === 0 ? 'A' : 'B';
-  
-  res.headers.set('x-locale', locale);
-  res.headers.set('x-currency', currency);
-  res.headers.set('x-country', country);
-  res.headers.set('x-variant', variant);
 
   return res;
 }

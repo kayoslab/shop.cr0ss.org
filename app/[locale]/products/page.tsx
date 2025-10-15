@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import type { ProductDTO } from '@/lib/ct/dto/product';
 import { ProductCard } from '@/components/ProductCard';
+import { SUPPORTED_LOCALES, SupportedLocale } from '@/lib/i18n/locales';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +30,25 @@ async function fetchProducts(): Promise<ListResponse | null> {
   return res.json() as Promise<ListResponse>;
 }
 
-export default async function ProductsPage() {
+export default async function ProductsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+
+  const { locale } = await params;
+  const localeTyped = locale as SupportedLocale;
+  if (!SUPPORTED_LOCALES.includes(localeTyped)) {
+    return (
+      <main className="mx-auto max-w-6xl px-6 py-16">
+        <h1 className="text-2xl font-semibold">Invalid locale</h1>
+        <p className="mt-2 text-gray-600">Please check the link or go back to Products.</p>
+      </main>
+    );
+  }
+
   const data = await fetchProducts();
   if (!data) return notFound();
 
@@ -40,7 +59,7 @@ export default async function ProductsPage() {
         {data.items.map((p) => {
           return (
             <li key={p.id}>
-              <ProductCard product={p} compact={false} />
+              <ProductCard product={p} compact={false} locale={localeTyped}/>
             </li>
           );
         })}

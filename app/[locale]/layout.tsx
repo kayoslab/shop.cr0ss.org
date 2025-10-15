@@ -1,12 +1,14 @@
 import './globals.css';
+import { headers } from 'next/headers';
+import { notFound } from 'next/navigation';
 import { Analytics } from '@vercel/analytics/next';
 import Nav from '@/components/Nav';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
-import { headers } from 'next/headers';
+import { SupportedLocale } from '@/lib/i18n/locales';
 
 export const revalidate = 3600;
 
-async function fetchCategories(locale: 'de-DE' | 'en-GB'): Promise<CategoryDTO[]> {
+async function fetchCategories(locale: SupportedLocale): Promise<CategoryDTO[]> {
   try {
     const h = headers();
     const proto = (await h).get('x-forwarded-proto') ?? 'http';
@@ -19,8 +21,8 @@ async function fetchCategories(locale: 'de-DE' | 'en-GB'): Promise<CategoryDTO[]
     if (!res.ok) return [];
     const data = (await res.json()) as { items?: CategoryDTO[] } | CategoryDTO[] | null | undefined;
 
-    const items = Array.isArray((data as any)?.items)
-      ? ((data as any).items as CategoryDTO[])
+    const items = Array.isArray((data as { items?: CategoryDTO[] })?.items)
+      ? ((data as { items?: CategoryDTO[] }).items as CategoryDTO[])
       : Array.isArray(data)
       ? (data as CategoryDTO[])
       : [];
@@ -41,16 +43,22 @@ export default async function RootLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: 'de-DE' | 'en-GB' }>;
+  params: Promise<{ locale: string }>; // Next 15: await params
 }) {
   const { locale } = await params;
-  const categories = await fetchCategories(locale);
+
+  const typedLocale = (locale === 'de-DE' ? 'de-DE' : 'en-GB') as SupportedLocale;
+  if (typedLocale !== locale) {
+    return notFound();
+  }
+  
+  const categories = await fetchCategories(typedLocale);
   const top = topLevel(categories);
 
   return (
-    <html lang={locale} className="h-full">
+    <html lang={typedLocale} className="h-full">
       <body className="min-h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-        <Nav topLevel={top} locale={locale} />
+        <Nav topLevel={top} locale={typedLocale} />
         {children}
         <Analytics />
       </body>

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { unstable_cache as cache } from 'next/cache';
 import { fetchCategoryContentFromCMS } from '@/lib/contentful/category';
+import { SupportedLocale } from '@/lib/i18n/locales';
 
 export interface CategoryCMSContentDTO {
   slug: string;
@@ -9,11 +10,9 @@ export interface CategoryCMSContentDTO {
   imageUrl?: string;
 }
 
-type Locale = 'de-DE' | 'en-GB';
-
 async function _fetchCategory(
   slug: string,
-  locale: Locale,
+  locale: SupportedLocale,
   preview: boolean
 ): Promise<CategoryCMSContentDTO | null> {
   return fetchCategoryContentFromCMS(slug, locale, preview);
@@ -21,7 +20,7 @@ async function _fetchCategory(
 
 const cachedFetchCategory = (
   slug: string,
-  locale: Locale,
+  locale: SupportedLocale,
   preview: boolean
 ) =>
   cache(_fetchCategory, ['api-cms-category', slug, locale, String(preview)], {
@@ -31,14 +30,20 @@ const cachedFetchCategory = (
 
 export async function GET(
   req: NextRequest,
-  ctx: { params: Promise<{ locale: Locale; slug: string }> }
+  ctx: { params: Promise<{ locale: string; slug: string }> }
 ) {
   const { locale, slug } = await ctx.params;
   const previewHeader = req.headers.get('x-preview') === '1';
   const previewEnv = (process.env.CONTENTFUL_PREVIEW_ENABLED || 'false').trim() === 'true';
   const preview = previewHeader && previewEnv;
 
-  const data = await cachedFetchCategory(slug, locale, preview);
+  const typedLocale = (locale === 'de-DE' ? 'de-DE' : 'en-GB') as SupportedLocale;
+
+  if (typedLocale !== locale) {
+    return new NextResponse('Locale not supported', { status: 400 });
+  }
+  
+  const data = await cachedFetchCategory(slug, typedLocale, preview);
   if (!data) return new NextResponse('Not found', { status: 404 });
 
   // Let unstable_cache handle caching; keep the HTTP response non-cacheable at CDN

@@ -12,10 +12,7 @@ export async function POST(req: Request) {
     
     revalidateTag(`products:${locale}`);
     revalidateTag(`categories:${locale}`);
-    // revalidateTag(`cms:home:${locale}`);
-  }
-
-  
+  }  
 
   return Response.json({
     ok: true,

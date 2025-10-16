@@ -15,11 +15,16 @@ export async function POST(request: NextRequest) {
     // Get content type from the webhook payload
     const contentType = body.sys?.contentType?.sys?.id || 'unknown';
     // Revalidate the relevant tag
+    const revalidatedTags = new Set<string>();
     for (const locale of SUPPORTED_LOCALES) {
-        // revalidateTag(`plp:cat:${slug}:${locale}`);
+        const slug = body.fields?.slug?.[locale] || null;
+        // const categories = body.fields?.categories?.[locale] || null;
+        const revalidationTag = `plp:cat:${slug}:${locale}`;
+        revalidateTag(revalidationTag);
+        revalidatedTags.add(revalidationTag);
         // revalidateTag(`categories:${locale}`);
-        revalidateTag(`cms:home:${locale}`);
+        // revalidateTag(`cms:home:${locale}`);
     }
 
-    return NextResponse.json({ ok: true, revalidated: [`cms:${contentType}`] });
+    return NextResponse.json({ ok: true, revalidated: Array.from(revalidatedTags) });
 }

@@ -24,7 +24,7 @@ const cachedFetchCategory = (
   preview: boolean
 ) =>
   cache(_fetchCategory, ['api-cms-category', slug, locale, String(preview)], {
-    tags: [`cms:category:${locale}`],
+    tags: [`cms:categories:${slug}:${locale}`],
     revalidate: 60 * 5,
   })(slug, locale, preview);
 

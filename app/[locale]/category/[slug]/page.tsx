@@ -49,7 +49,7 @@ async function fetchCategoryContentFromCMS(locale: SupportedLocale, slug: string
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
   
   const res = await fetch(`${base}/${locale}/api/cms/categories/${slug}`, {
-    next: { tags: [`categories:${locale}`] },
+    next: { tags: [`plp:cat:${slug}:${locale}`] },
   });
   if (!res.ok) return null;
   return res.json() as Promise<CategoryCMSContentDTO>;

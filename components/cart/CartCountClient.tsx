@@ -17,7 +17,7 @@ export default function CartCountClient({ locale }: { locale: SupportedLocale })
       if (!res.ok) return;
       const data = await res.json();
       const items = Array.isArray(data?.lineItems) ? data.lineItems : [];
-      const totalQty = items.reduce((acc: number, li: any) => acc + (Number(li?.quantity) || 0), 0);
+      const totalQty = items.reduce((acc: number, li: { quantity: number }) => acc + (Number(li?.quantity) || 0), 0);
       setCount(totalQty);
     } catch {
       // ignore network errors for the badge

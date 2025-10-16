@@ -1,3 +1,4 @@
+// app/[locale]/cart/page.tsx
 export const runtime = 'edge';
 export const revalidate = 0;
 
@@ -5,13 +6,45 @@ import type { SupportedLocale } from '@/lib/i18n/locales';
 import type { CartDTO } from '@/lib/ct/dto/cart';
 import CartClient from '@/components/cart/CartClient';
 import { absoluteBase } from '@/lib/networking/absoluteBase';
-import { headers } from 'next/dist/server/request/headers';
+import { headers } from 'next/headers';
+import Link from 'next/link';
+
+function formatMoney(centAmount: number, currency: string) {
+  return `${(centAmount / 100).toFixed(2)} ${currency}`;
+}
+
+function PriceCell({
+  unit,
+}: {
+  unit?: { currencyCode: string; centAmount: number; discounted?: boolean; discountedCentAmount?: number };
+}) {
+  if (!unit) return <span>-</span>;
+  const { currencyCode, centAmount, discounted, discountedCentAmount } = unit;
+
+  if (discounted && typeof discountedCentAmount === 'number') {
+    return (
+      <div className="flex items-baseline gap-2">
+        <span className="text-sm font-semibold">
+          {formatMoney(discountedCentAmount, currencyCode)}
+        </span>
+        <span className="text-xs text-gray-500 line-through">
+          {formatMoney(centAmount, currencyCode)}
+        </span>
+      </div>
+    );
+  }
+
+  return <span className="text-sm font-medium">{formatMoney(centAmount, currencyCode)}</span>;
+}
 
 async function fetchCart(locale: SupportedLocale): Promise<CartDTO | null> {
   const base = absoluteBase();
   const h = headers();
   const cookie = (await h).get('cookie') ?? '';
-  const res = await fetch(`${base}/${locale}/api/cart`, { cache: 'no-store', headers: { cookie } });
+  const res = await fetch(`${base}/${locale}/api/cart`, {
+    cache: 'no-store',
+    headers: { cookie },
+  });
   if (!res.ok) return null;
   return (await res.json()) as CartDTO;
 }
@@ -35,28 +68,36 @@ export default async function CartPage({
           <ul className="divide-y rounded-2xl border dark:border-gray-800">
             {cart.lineItems.map((li) => (
               <li key={li.id} className="flex items-center gap-4 p-4">
+                {/* Image */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={li.imageUrl || '/placeholder.png'}
                   alt={li.name}
                   className="h-16 w-16 rounded-lg border object-contain p-1 dark:border-gray-800"
                 />
+
+                {/* Title/SKU */}
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{li.name}</div>
+                  <div className="truncate font-medium">
+                    <Link
+                      href={`/${locale}/products/${li.productId}`}
+                      className="hover:underline"
+                    >
+                      {li.name}
+                    </Link>
+                  </div>
                   <div className="text-sm text-gray-500">
                     {li.sku ? `SKU: ${li.sku}` : null}
                   </div>
                 </div>
-                <div className="text-sm font-medium">
-                  {li.unitPrice
-                    ? `${(li.unitPrice.centAmount / 100).toFixed(2)} ${li.unitPrice.currencyCode}`
-                    : '-'}
+
+                {/* Unit price with strike-through old price when discounted */}
+                <div className="min-w-[7rem] text-right">
+                  <PriceCell unit={li.unitPrice} />
                 </div>
-                <CartClient
-                  locale={locale}
-                  lineItemId={li.id}
-                  quantity={li.quantity}
-                />
+
+                {/* Quantity controls */}
+                <CartClient locale={locale} lineItemId={li.id} quantity={li.quantity} />
               </li>
             ))}
           </ul>
@@ -66,7 +107,7 @@ export default async function CartPage({
               <div className="text-sm text-gray-500">Total</div>
               <div className="text-xl font-semibold">
                 {cart.total
-                  ? `${(cart.total.centAmount / 100).toFixed(2)} ${cart.total.currencyCode}`
+                  ? formatMoney(cart.total.centAmount, cart.total.currencyCode)
                   : '-'}
               </div>
             </div>

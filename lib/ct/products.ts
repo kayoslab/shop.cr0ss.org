@@ -206,7 +206,7 @@ function variantToDTO(locale: string, variant: ProductVariant, ctx: PriceContext
     price: base
       ? {
           currencyCode: base.currencyCode,
-          centAmount: discounted ? discounted.centAmount : base.centAmount,
+          centAmount: base.centAmount,
           discounted: Boolean(discounted),
           discountedCentAmount: discounted?.centAmount,
         }

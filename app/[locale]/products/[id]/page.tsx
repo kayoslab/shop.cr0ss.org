@@ -71,16 +71,10 @@ export default async function ProductDetailPage({
   // Use master variant or first variant as fallback
   const master = product.variants.find(v => v.id === product.masterVariantId) ?? product.variants[0];
   const price = master?.price
-    ? {
-        currencyCode: master.price.currencyCode,
-        centAmount: master.price.centAmount,
-      }
+    ? { currencyCode: master.price.currencyCode, centAmount: master.price.centAmount }
     : undefined;
   const discounted = master?.price?.discountedCentAmount
-    ? {
-        currencyCode: master.price.currencyCode,
-        centAmount: master.price.discountedCentAmount!,
-      }
+    ? { currencyCode: master.price.currencyCode, centAmount: master.price.discountedCentAmount! }
     : undefined;
 
   const gallery = master?.images?.length ? master.images : [{ url: '/placeholder.png', alt: 'Product' }];

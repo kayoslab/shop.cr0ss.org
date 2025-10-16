@@ -51,7 +51,9 @@ export async function GET(
   }
 
   const dto = mapCartToDTO(cart, typedLocale);
-  const res = NextResponse.json(dto, { headers: { 'Cache-Control': 'no-store' } });
+  const res = NextResponse.json(dto, { 
+    headers: { 'Cache-Control': 'no-store' } 
+  });
 
   // set/update the per-locale cookie
   res.cookies.set(name, cart.id, {

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
 import LangSwitcher from '@/components/lang-switcher';
 import type { SupportedLocale } from '@/lib/i18n/locales';
+import CartCountClient from '@/components/cart/CartCountClient';
 
 function BasketIcon({ className }: { className?: string }) {
   return (
@@ -92,7 +93,7 @@ export default async function Nav({
           </div>
           <Link href={`/${locale}/cart`} className="relative inline-flex items-center" aria-label="Cart">
             <BasketIcon className="h-6 w-6 text-gray-700 dark:text-gray-300" />
-            <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">0</span>
+            <CartCountClient locale={locale} />
           </Link>
         </div>
       </div>

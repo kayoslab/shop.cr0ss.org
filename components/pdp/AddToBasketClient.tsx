@@ -41,7 +41,7 @@ export default function AddToBasketClient({
         setErr('Could not add to basket');
         return;
       }
-      // Option: toast here. For now, refresh badges/summary if you add them later.
+      window.dispatchEvent(new Event('cart-updated'));
       router.refresh();
     });
   };

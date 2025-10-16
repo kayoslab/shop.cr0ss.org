@@ -26,7 +26,8 @@ export default function CartClient({
       });
       if (res.ok) {
         setQty(next);
-        router.refresh(); // refresh the server page
+        window.dispatchEvent(new Event('cart-updated'));
+        router.refresh();
       }
     });
   };

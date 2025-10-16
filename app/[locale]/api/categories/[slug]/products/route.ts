@@ -1,4 +1,3 @@
-// app/[locale]/api/categories/[slug]/products/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { unstable_cache as cache } from 'next/cache';
 import { appGetCategoryBySlug, appListProductsByCategoryId } from '@/lib/ct/categories';
@@ -85,10 +84,11 @@ export async function GET(
     // Prefer letting unstable_cache handle caching
     // return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
     
+    // Short s-maxage and vary on locale/currency/country:
     return NextResponse.json(data, {
       headers: {
         'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=60',
-        'Vary': 'accept-encoding,locale,currency,country',
+        'Vary': 'accept-encoding, locale, currency, country',
       },
     });
   } catch (e) {

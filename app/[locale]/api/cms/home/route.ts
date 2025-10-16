@@ -42,11 +42,11 @@ export async function GET(
   //   headers: { 'Cache-Control': 'no-store' },
   // });
 
-  // If you really want CDN caching, switch to a short s-maxage and (optionally) add Vary:
+  // Short s-maxage and vary on preview:
   return NextResponse.json(data, {
     headers: {
       'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=60',
-      'Vary': 'accept-encoding,x-preview',
+      'Vary': 'accept-encoding, x-preview',
     },
   });
 }

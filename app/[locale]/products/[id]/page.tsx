@@ -106,7 +106,7 @@ export default async function ProductDetailPage({
 
           {/* Add to basket (client) */}
           <div className="mt-6">
-            <AddToBasketClient product={product} />
+            <AddToBasketClient product={product} locale={localeTyped} />
           </div>
 
           {/* Description */}

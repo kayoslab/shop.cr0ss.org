@@ -51,11 +51,11 @@ export async function GET(
   // Let unstable_cache handle caching; keep the HTTP response non-cacheable at CDN
   // return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
 
-  // If you insist on CDN caching, switch to short s-maxage and vary on preview:
+  // Short s-maxage and vary on preview:
   return NextResponse.json(data, {
     headers: {
       'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=60',
-      'Vary': 'accept-encoding,x-preview',
+      'Vary': 'accept-encoding, x-preview',
     },
   });
 }

@@ -74,11 +74,11 @@ export async function GET(
   // Let unstable_cache handle freshness; keep HTTP response non-cacheable
   return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
 
-  // If you truly want CDN caching, use short s-maxage and vary on inputs:
+  // Short s-maxage and vary on locale/currency/country:
   // return NextResponse.json(data, {
   //   headers: {
   //     'Cache-Control': 'public, max-age=0, s-maxage=120, stale-while-revalidate=30',
-  //     'Vary': 'accept-encoding,locale,currency,country',
+  //     'Vary': 'accept-encoding, locale, currency, country',
   //   },
   // });
 }

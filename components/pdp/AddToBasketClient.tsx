@@ -1,87 +1,61 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import type { ProductProjectionDTO } from '@/lib/ct/dto/product';
+import type { SupportedLocale } from '@/lib/i18n/locales';
 
-type Product = {
-  id: string;
-  name: string;
-  masterVariantId: number;
-  variants: Array<{
-    id: number;
-    sku?: string;
-    price?: { currencyCode: string; centAmount: number; discounted?: boolean; discountedCentAmount?: number; };
-  }>;
-};
+export default function AddToBasketClient({
+  product,
+  locale,
+  selectedVariantId,
+}: {
+  product: ProductProjectionDTO;
+  locale: SupportedLocale;
+  selectedVariantId?: number; // pass from VariantPickerClient via prop or context
+}) {
+  const [pending, startTransition] = useTransition();
+  const [err, setErr] = useState<string | null>(null);
+  const router = useRouter();
 
-type CartLine = {
-  productId: string;
-  variantId: number;
-  qty: number;
-  name: string;
-  priceCentAmount?: number;
-  currencyCode?: string;
-};
+  const add = () => {
+    const variantId =
+      selectedVariantId ??
+      product.variants.find((v) => v.id === product.masterVariantId)?.id ??
+      product.variants[0]?.id;
 
-const CART_KEY = 'demo_cart';
-
-function readCart(): CartLine[] {
-  try {
-    const raw = localStorage.getItem(CART_KEY);
-    return raw ? (JSON.parse(raw) as CartLine[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeCart(lines: CartLine[]) {
-  localStorage.setItem(CART_KEY, JSON.stringify(lines));
-  // fire a tiny event so a nav badge could update
-  window.dispatchEvent(new CustomEvent('cart:updated', { detail: { count: lines.reduce((a, l) => a + l.qty, 0) } }));
-}
-
-export default function AddToBasketClient({ product }: { product: Product }) {
-  const [qty, setQty] = useState(1);
-  const master = useMemo(
-    () => product.variants.find(v => v.id === product.masterVariantId) ?? product.variants[0],
-    [product]
-  );
-
-  const handleAdd = () => {
-    const cart = readCart();
-    const idx = cart.findIndex(l => l.productId === product.id && l.variantId === master.id);
-    const price = master.price?.discountedCentAmount ?? master.price?.centAmount;
-    if (idx >= 0) {
-      cart[idx].qty += qty;
-    } else {
-      cart.push({
-        productId: product.id,
-        variantId: master.id,
-        qty,
-        name: product.name,
-        priceCentAmount: price,
-        currencyCode: master.price?.currencyCode,
-      });
+    if (!variantId) {
+      setErr('No variant selected');
+      return;
     }
-    writeCart(cart);
-    alert('Added to basket!');
-    setQty(1);
+
+    startTransition(async () => {
+      setErr(null);
+      const res = await fetch(`/${locale}/api/cart/line-items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // You can also send `sku` if you prefer: { sku: '...' }
+        body: JSON.stringify({ productId: product.id, variantId, quantity: 1 }),
+      });
+      if (!res.ok) {
+        setErr('Could not add to basket');
+        return;
+      }
+      // Option: toast here. For now, refresh badges/summary if you add them later.
+      router.refresh();
+    });
   };
 
   return (
-    <div className="flex items-center gap-3">
-      <input
-        type="number"
-        min={1}
-        value={qty}
-        onChange={(e) => setQty(Math.max(1, Number(e.target.value)))}
-        className="w-20 rounded-lg border bg-white px-2 py-2 text-sm dark:border-gray-800 dark:bg-gray-950"
-      />
+    <div className="flex flex-col gap-2">
       <button
-        onClick={handleAdd}
-        className="inline-flex items-center rounded-lg bg-black px-5 py-3 text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+        onClick={add}
+        disabled={pending}
+        className="rounded-xl bg-black px-4 py-2 text-white disabled:opacity-60 dark:bg-white dark:text-black"
       >
-        Add to basket
+        {pending ? 'Adding…' : 'Add to basket'}
       </button>
+      {err && <p className="text-sm text-red-600">{err}</p>}
     </div>
   );
 }

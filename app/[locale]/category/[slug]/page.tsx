@@ -36,7 +36,10 @@ async function fetchPLP(
   }).toString();
 
   const res = await fetch(`${base}/${locale}/api/categories/${slug}/products?${qs}`, {
-    next: { revalidate, tags: [`plp:cat:${slug}:${locale}`] },
+    next: { 
+      revalidate,
+      tags: [`plp:cat:${slug}:${locale}`] 
+    },
   });
   if (!res.ok) return null;
   return (await res.json()) as ListResponse;
@@ -49,7 +52,7 @@ async function fetchCategoryContentFromCMS(locale: SupportedLocale, slug: string
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
   
   const res = await fetch(`${base}/${locale}/api/cms/categories/${slug}`, {
-    next: { tags: [`plp:cat:${slug}:${locale}`] },
+    next: { tags: [`cms:categories:${slug}:${locale}`] },
   });
   if (!res.ok) return null;
   return res.json() as Promise<CategoryCMSContentDTO>;

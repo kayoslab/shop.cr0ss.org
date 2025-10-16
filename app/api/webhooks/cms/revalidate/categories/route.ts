@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     for (const locale of SUPPORTED_LOCALES) {
         const slug = body.fields?.slug?.[locale] || null;
         // const categories = body.fields?.categories?.[locale] || null;
-        const revalidationTag = `plp:cat:${slug}:${locale}`;
+        const revalidationTag = `cms:categories:${slug}:${locale}`;
         revalidateTag(revalidationTag);
         revalidatedTags.add(revalidationTag);
         // revalidateTag(`categories:${locale}`);

@@ -94,7 +94,7 @@ export default async function CategoryPage({
 
             {/* Text */}
             <div className="prose max-w-none self-start dark:prose-invert">
-              <h1 className="mb-2 text-2xl font-semibold">{cms?.slug}</h1>
+              <h1 className="mb-2 text-2xl font-semibold">{cms?.title ?? cms?.slug}</h1>
               <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">{cms?.description}</p>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { fetchCategoryContentFromCMS } from '@/lib/contentful/category';
 import { SupportedLocale } from '@/lib/i18n/locales';
 
 export interface CategoryCMSContentDTO {
+  title: string;
   slug: string;
   excerpt: string;
   description: string;

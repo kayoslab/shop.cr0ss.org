@@ -6,6 +6,7 @@ import { DEFAULT_LOCALE } from '../i18n/locales';
 type CategoryFields = {
     contentTypeId: string;
     fields: {
+        title: string;
         slug: string;
         excerpt: string;
         description: string;
@@ -49,6 +50,7 @@ export async function fetchCategoryContentFromCMS(
   const heroImageUrl = f.imageUrl ? assetUrl(f.imageUrl, locale) : undefined;
 
   return {
+    title: f.title ?? 'Category',
     slug: f.slug ?? 'category',
     excerpt: f.excerpt ?? 'Exciting new products.',
     description: f.description ?? '',

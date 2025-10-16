@@ -8,6 +8,7 @@ export interface CategoryDTO {
   parentId: string | null;
   children: CategoryDTO[];
   content?: {
+    title: string;
     excerpt?: string;
     description?: string;
     imageUrl?: string;

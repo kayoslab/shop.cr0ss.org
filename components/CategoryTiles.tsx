@@ -37,7 +37,7 @@ export function CategoryTiles({
                 </div>
 
                 <div className="flex flex-1 flex-col p-4">
-                  <h3 className="text-lg font-semibold line-clamp-2">{category.name}</h3>
+                  <h3 className="text-lg font-semibold line-clamp-2">{category.content?.title ?? category.name}</h3>
                   {category.content?.excerpt ? (
                     <p className="mt-1 text-sm text-muted-foreground line-clamp-3">
                       {category.content.excerpt}

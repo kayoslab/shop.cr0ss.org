@@ -27,7 +27,7 @@ async function fetchCategoryContentFromCMS(locale: SupportedLocale, slug: string
   const absoluteBasePath = absoluteBase();
   
   const res = await fetch(`${absoluteBasePath}/${locale}/api/cms/categories/${slug}`, {
-    next: { tags: [`cms:categories:${slug}:${locale}`] },
+    next: { revalidate, tags: [`cms:categories:${slug}:${locale}`] },
   });
   if (!res.ok) return null;
   return res.json() as Promise<CategoryCMSContentDTO>;
@@ -54,7 +54,7 @@ async function fetchCategories(locale: SupportedLocale, featuredSlugs?: string[]
   const absoluteBasePath = absoluteBase();
   
   const res = await fetch(`${absoluteBasePath}/${locale}/api/categories`, {
-    next: { revalidate: 3600, tags: [`categories:${locale}`] },
+    next: { revalidate, tags: [`categories:${locale}`] },
   });
   if (!res.ok) return [];
   const payload = await res.json();
@@ -86,7 +86,7 @@ async function fetchRecommended(locale: SupportedLocale, limit = 4): Promise<Pro
   const qs = new URLSearchParams({ limit: `${limit}`, currency: localeToCurrency(locale), country: localeToCountry(locale) }).toString();
 
   const res = await fetch(`${absoluteBasePath}/${locale}/api/products${qs ? `?${qs}` : ''}`, {
-    next: { tags: [`products:${locale}`] },
+    next: { revalidate, tags: [`products:${locale}`] },
   });
   if (!res.ok) return [];
   const data = (await res.json()) as ListResponse;

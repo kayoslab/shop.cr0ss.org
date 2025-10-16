@@ -1,4 +1,3 @@
-import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import type { ProductDTO, ProductProjectionDTO } from '@/lib/ct/dto/product';
 import { ProductCard } from '@/components/ProductCard';
@@ -75,7 +74,7 @@ export default async function CategoryPage({
     );
   }
 
-  const items: ProductProjectionDTO[] = Array.isArray((plpRaw as any)?.items)
+  const items: ProductProjectionDTO[] = Array.isArray((plpRaw as { items: ProductProjectionDTO[] })?.items)
     ? (plpRaw.items as ProductProjectionDTO[])
     : [];
   const total = typeof plpRaw.total === 'number' ? plpRaw.total : items.length;
@@ -91,7 +90,7 @@ export default async function CategoryPage({
             <div className="relative aspect-square w-full overflow-hidden rounded-xl border bg-white dark:border-gray-800 dark:bg-gray-950 md:self-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={cms?.imageUrl!}
+                src={cms?.imageUrl}
                 alt={cms?.slug || 'Category'}
                 className="absolute inset-0 h-full w-full object-cover object-center"
               />
@@ -106,10 +105,8 @@ export default async function CategoryPage({
         </section>
       )}
 
-
-
       {/* Product list */}
-      <section aria-labelledby="plp-heading">
+      <section aria-labelledby="plp-heading" className="py-16">
         <div className="mb-4 flex items-center justify-between">
           <h2 id="plp-heading" className="text-xl font-semibold">
             Products

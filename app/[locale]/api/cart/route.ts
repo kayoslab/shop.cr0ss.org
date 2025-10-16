@@ -3,7 +3,7 @@ export const runtime = 'nodejs';
 import { NextResponse, type NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import { localeToCountry, localeToCurrency, type SupportedLocale } from '@/lib/i18n/locales';
-import { createAnonymousCart, getCartById, mapCartToDTO } from '@/lib/ct/cart';
+import { createAnonymousCart, getCartById, mapCartToDTO, recalculateCart } from '@/lib/ct/cart';
 
 const COOKIE_PREFIX = 'cartId';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
@@ -49,6 +49,10 @@ export async function GET(
       locale: typedLocale,
     });
   }
+
+  try {
+  cart = await recalculateCart(cart.id, cart.version, { updateProductData: true });
+  } catch { /* ignore recalc errors */ }
 
   const dto = mapCartToDTO(cart, typedLocale);
   const res = NextResponse.json(dto, { 

@@ -5,7 +5,6 @@ import type {
   ProductVariant,
 } from '@commercetools/platform-sdk';
 import type { CartDTO, CartLineItemDTO, MoneyDTO } from './dto/cart';
-import error from 'next/error';
 
 const MAX_RETRIES = 3;
 
@@ -38,8 +37,8 @@ export function mapCartToDTO(cart: Cart, locale: string): CartDTO {
       sku: li.variant?.sku,
       quantity: li.quantity,
       unitPrice: moneyToDTO(price) && {
-        currencyCode: price!.currencyCode,
-        centAmount: price!.centAmount,
+        currencyCode: price?.currencyCode,
+        centAmount: price?.centAmount,
         discounted: Boolean(li.price?.discounted?.value),
         discountedCentAmount: li.price?.discounted?.value?.centAmount,
       },
@@ -111,6 +110,17 @@ export async function updateCartWithRetry(
   }
   // final attempt
   return await updateCartOnce(cartId, v, actions);
+}
+
+export async function recalculateCart(
+  cartId: string,
+  version: number,
+  opts: { updateProductData?: boolean } = { updateProductData: true }
+) {
+  const actions: CartUpdateAction[] = [
+    { action: 'recalculate', updateProductData: opts.updateProductData ?? true },
+  ];
+  return updateCartWithRetry(cartId, version, actions);
 }
 
 export async function addLineItem(

@@ -1,21 +1,18 @@
 import './globals.css';
-import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { Analytics } from '@vercel/analytics/next';
 import Nav from '@/components/Nav';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
 import { SupportedLocale } from '@/lib/i18n/locales';
+import { absoluteBase } from '@/lib/networking/absoluteBase';
 
 export const revalidate = 3600;
 
 async function fetchCategories(locale: SupportedLocale): Promise<CategoryDTO[]> {
   try {
-    const h = headers();
-    const proto = (await h).get('x-forwarded-proto') ?? 'http';
-    const host = (await h).get('host');
-    const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
+    const absoluteBasePath = absoluteBase();
     
-    const res = await fetch(`${base}/${locale}/api/categories`, {
+    const res = await fetch(`${absoluteBasePath}/${locale}/api/categories`, {
       next: { revalidate: 3600, tags: [`categories:${locale}`] },
     });
     if (!res.ok) return [];

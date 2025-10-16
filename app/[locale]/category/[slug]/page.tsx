@@ -1,8 +1,8 @@
-import { headers } from 'next/headers';
 import type { ProductDTO, ProductProjectionDTO } from '@/lib/ct/dto/product';
 import { ProductCard } from '@/components/ProductCard';
 import { SupportedLocale, localeToCountry, localeToCurrency } from '@/lib/i18n/locales';
 import { CategoryCMSContentDTO } from '../../api/cms/categories/[slug]/route';
+import { absoluteBase } from '@/lib/networking/absoluteBase';
 
 export const revalidate = 600;
 
@@ -20,10 +20,7 @@ async function fetchPLP(
   slug: string,
   searchParams: Record<string, string | string[] | undefined>
 ): Promise<ListResponse | null> {
-  const h = headers();
-  const proto = (await h).get('x-forwarded-proto') ?? 'http';
-  const host = (await h).get('host');
-  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
+  const absoluteBasePath = absoluteBase();
 
   const limit = typeof searchParams.limit === 'string' ? searchParams.limit : '24';
   const offset = typeof searchParams.offset === 'string' ? searchParams.offset : '0';
@@ -35,7 +32,7 @@ async function fetchPLP(
     country: localeToCountry(locale),
   }).toString();
 
-  const res = await fetch(`${base}/${locale}/api/categories/${slug}/products?${qs}`, {
+  const res = await fetch(`${absoluteBasePath}/${locale}/api/categories/${slug}/products?${qs}`, {
     next: { 
       revalidate,
       tags: [`plp:cat:${slug}:${locale}`] 
@@ -46,12 +43,8 @@ async function fetchPLP(
 }
 
 async function fetchCategoryContentFromCMS(locale: SupportedLocale, slug: string): Promise<CategoryCMSContentDTO | null> {
-  const h = headers();
-  const proto = (await h).get('x-forwarded-proto') ?? 'http';
-  const host = (await h).get('host');
-  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  
-  const res = await fetch(`${base}/${locale}/api/cms/categories/${slug}`, {
+  const absoluteBasePath = absoluteBase();
+  const res = await fetch(`${absoluteBasePath}/${locale}/api/cms/categories/${slug}`, {
     next: { tags: [`cms:categories:${slug}:${locale}`] },
   });
   if (!res.ok) return null;

@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
-import { headers } from 'next/headers';
 import type { ProductDTO } from '@/lib/ct/dto/product';
 import { ProductCard } from '@/components/ProductCard';
 import { localeToCountry, localeToCurrency, SUPPORTED_LOCALES, SupportedLocale } from '@/lib/i18n/locales';
+import { absoluteBase } from '@/lib/networking/absoluteBase';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,13 +14,10 @@ interface ListResponse {
 }
 
 async function fetchProducts(locale: SupportedLocale): Promise<ListResponse | null> {
-  const h = headers();
-  const proto = (await h).get('x-forwarded-proto') ?? 'http';
-  const host = (await h).get('host');
-  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
+  const absoluteBasePath = absoluteBase();
   const qs = new URLSearchParams({ currency: localeToCurrency(locale), country: localeToCountry(locale) }).toString();
 
-  const res = await fetch(`${base}/api/products${qs ? `?${qs}` : ''}`, { cache: 'no-store' });
+  const res = await fetch(`${absoluteBasePath}/${locale}/api/products${qs ? `?${qs}` : ''}`, { cache: 'no-store' });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error('Failed to load products');
   return res.json() as Promise<ListResponse>;

@@ -5,8 +5,8 @@ import type { ProductDTO } from '@/lib/ct/dto/product';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
 import type { CategoryCMSContentDTO } from '@/app/[locale]/api/cms/categories/[slug]/route';
 import type { HomeDTO } from '@/lib/contentful/dto/home';
-import { headers } from 'next/headers';
 import { localeToCurrency, localeToCountry, SupportedLocale } from '@/lib/i18n/locales';
+import { absoluteBase } from '@/lib/networking/absoluteBase';
 
 export const revalidate = 300;
 
@@ -14,12 +14,9 @@ type Params = { locale: SupportedLocale };
 type ListResponse = { items: ProductDTO[]; total: number; limit: number; offset: number };
 
 async function fetchHome(locale: SupportedLocale): Promise<HomeDTO | null> {
-  const h = headers();
-  const proto = (await h).get('x-forwarded-proto') ?? 'http';
-  const host = (await h).get('host');
-  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
+  const absoluteBasePath = absoluteBase();
   
-  const res = await fetch(`${base}/${locale}/api/cms/home`, {
+  const res = await fetch(`${absoluteBasePath}/${locale}/api/cms/home`, {
     next: { revalidate, tags: [`cms:home:${locale}`] },
   });
   if (!res.ok) return null;
@@ -27,12 +24,9 @@ async function fetchHome(locale: SupportedLocale): Promise<HomeDTO | null> {
 }
 
 async function fetchCategoryContentFromCMS(locale: SupportedLocale, slug: string): Promise<CategoryCMSContentDTO | null> {
-  const h = headers();
-  const proto = (await h).get('x-forwarded-proto') ?? 'http';
-  const host = (await h).get('host');
-  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
+  const absoluteBasePath = absoluteBase();
   
-  const res = await fetch(`${base}/${locale}/api/cms/categories/${slug}`, {
+  const res = await fetch(`${absoluteBasePath}/${locale}/api/cms/categories/${slug}`, {
     next: { tags: [`cms:categories:${slug}:${locale}`] },
   });
   if (!res.ok) return null;
@@ -57,12 +51,9 @@ function flattenCategories(categories?: CategoryDTO[] | null): CategoryDTO[] {
 }
 
 async function fetchCategories(locale: SupportedLocale, featuredSlugs?: string[], sliced = 8): Promise<CategoryDTO[]> {
-  const h = headers();
-  const proto = (await h).get('x-forwarded-proto') ?? 'http';
-  const host = (await h).get('host');
-  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
+  const absoluteBasePath = absoluteBase();
   
-  const res = await fetch(`${base}/${locale}/api/categories`, {
+  const res = await fetch(`${absoluteBasePath}/${locale}/api/categories`, {
     next: { revalidate: 3600, tags: [`categories:${locale}`] },
   });
   if (!res.ok) return [];
@@ -91,13 +82,10 @@ async function fetchCategories(locale: SupportedLocale, featuredSlugs?: string[]
 }
 
 async function fetchRecommended(locale: SupportedLocale, limit = 4): Promise<ProductDTO[]> {
-  const h = headers();
-  const proto = (await h).get('x-forwarded-proto') ?? 'http';
-  const host = (await h).get('host');
-  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
+  const absoluteBasePath = absoluteBase();
   const qs = new URLSearchParams({ limit: `${limit}`, currency: localeToCurrency(locale), country: localeToCountry(locale) }).toString();
 
-  const res = await fetch(`${base}/${locale}/api/products${qs ? `?${qs}` : ''}`, {
+  const res = await fetch(`${absoluteBasePath}/${locale}/api/products${qs ? `?${qs}` : ''}`, {
     next: { tags: [`products:${locale}`] },
   });
   if (!res.ok) return [];

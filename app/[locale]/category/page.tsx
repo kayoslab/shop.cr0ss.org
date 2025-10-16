@@ -1,18 +1,10 @@
-import { headers } from 'next/headers';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
+import { absoluteBase } from '@/lib/networking/absoluteBase';
 
 async function fetchCategories(): Promise<CategoryDTO[]> {
-  const h = headers();
-  const proto = (await h).get('x-forwarded-proto') ?? 'http';
-  const host = (await h).get('host');
-  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
-  const cookie = (await h).get('cookie') ?? '';
-  const res = await fetch(`${base}/api/categories`, 
-    { 
-      next: { tags: ['categories'] }, 
-      headers: { cookie },
-    }
-  );
+  const absoluteBasePath = absoluteBase();
+  const res = await fetch(`${absoluteBasePath}/api/categories`, { next: { tags: ['categories'] } });
+  
   if (!res.ok) return [];
   const data = (await res.json()) as { items: CategoryDTO[] };
   return data.items;

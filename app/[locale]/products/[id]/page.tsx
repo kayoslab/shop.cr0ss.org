@@ -1,9 +1,9 @@
-import { headers } from 'next/headers';
 import VariantPickerClient from '@/components/pdp/VariantPickerClient';
 import AddToBasketClient from '@/components/pdp/AddToBasketClient';
 import ProductGalleryClient from '@/components/pdp/ProductGalleryClient';
 import type { ProductProjectionDTO } from '@/lib/ct/dto/product';
 import { SupportedLocale, localeToCountry, localeToCurrency, SUPPORTED_LOCALES } from '@/lib/i18n/locales';
+import { absoluteBase } from '@/lib/networking/absoluteBase';
 
 export const runtime = 'edge';
 export const revalidate = 0;
@@ -27,13 +27,10 @@ function formatMoney(m?: Money, discounted?: Money) {
 }
 
 async function fetchProduct(id: string, locale: SupportedLocale): Promise<ProductProjectionDTO | null> {
-  const h = headers();
-  const proto = (await h).get('x-forwarded-proto') ?? 'http';
-  const host = (await h).get('host');
-  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? (host ? `${proto}://${host}` : '');
+  const absoluteBasePath = absoluteBase();
   const qs = new URLSearchParams({ currency: localeToCurrency(locale), country: localeToCountry(locale) }).toString();
 
-  const res = await fetch(`${base}/${locale}/api/products/${id}${qs ? `?${qs}` : ''}`, 
+  const res = await fetch(`${absoluteBasePath}/${locale}/api/products/${id}${qs ? `?${qs}` : ''}`, 
     { cache: 'no-store' }
   );
   

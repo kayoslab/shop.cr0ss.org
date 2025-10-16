@@ -38,7 +38,7 @@ export default function middleware(req: NextRequest) {
   setVariant(req, res);
 
   const { pathname } = req.nextUrl;
-  if (pathname.startsWith('/_next') || pathname.startsWith('/assets')) return;
+  if (pathname.startsWith('/_next') || pathname.startsWith('/assets') || pathname.includes('/api/')) return;
 
   const seg = pathname.split('/')[1];
   if (!SUPPORTED_LOCALES.includes(seg as any)) {

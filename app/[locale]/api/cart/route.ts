@@ -2,7 +2,7 @@ export const runtime = 'nodejs';
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
-import { localeToCountry, localeToCurrency, type SupportedLocale } from '@/lib/i18n/locales';
+import { localeToCountry, localeToCurrency, type SupportedLocale, isSupportedLocale } from '@/lib/i18n/locales';
 import { createAnonymousCart, getCartById, mapCartToDTO, recalculateCart } from '@/lib/ct/cart';
 
 const COOKIE_PREFIX = 'cartId';
@@ -15,18 +15,16 @@ export async function GET(
 ) {
   const { locale } = await ctx.params;
 
-  const typedLocale = (locale === 'de-DE' ? 'de-DE' : 'en-GB') as SupportedLocale;
-
-  if (typedLocale !== locale) {
+  if (!isSupportedLocale(locale)) {
     return new NextResponse('Locale not supported', { status: 400 });
   }
 
   const c = cookies();
-  const name = cookieName(typedLocale);
+  const name = cookieName(locale);
   const existing = (await c).get(name)?.value;
 
-  const wantedCurrency = localeToCurrency(typedLocale);
-  const wantedCountry  = localeToCountry(typedLocale);
+  const wantedCurrency = localeToCurrency(locale);
+  const wantedCountry  = localeToCountry(locale);
 
   let cart;
   if (existing) {
@@ -46,7 +44,7 @@ export async function GET(
     cart = await createAnonymousCart({
       currency: wantedCurrency,
       country: wantedCountry,
-      locale: typedLocale,
+      locale: locale,
     });
   }
 
@@ -54,7 +52,7 @@ export async function GET(
   cart = await recalculateCart(cart.id, cart.version, { updateProductData: true });
   } catch { /* ignore recalc errors */ }
 
-  const dto = mapCartToDTO(cart, typedLocale);
+  const dto = mapCartToDTO(cart, locale);
   const res = NextResponse.json(dto, { 
     headers: { 'Cache-Control': 'no-store' } 
   });

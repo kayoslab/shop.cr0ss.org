@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { unstable_cache as cache } from 'next/cache';
 import { fetchHomeFromCMS } from '@/lib/contentful/home';
 import type { HomeDTO } from '@/lib/contentful/dto/home';
-import { SupportedLocale } from '@/lib/i18n/locales';
+import { SupportedLocale, isSupportedLocale } from '@/lib/i18n/locales';
+import { cmsTags } from '@/lib/cache/tags';
 
 async function _fetchHome(locale: SupportedLocale, preview: boolean): Promise<HomeDTO | null> {
   return fetchHomeFromCMS(locale, preview);
@@ -13,7 +14,7 @@ const cachedFetchHome = (
   preview: boolean
 ) =>
   cache(_fetchHome, ['api-cms-home', locale, String(preview)], {
-    tags: [`cms:home:${locale}`],
+    tags: [cmsTags.home(locale)],
     revalidate: 60 * 5,
   })(locale, preview);
 
@@ -28,13 +29,11 @@ export async function GET(
   const previewEnv = (process.env.CONTENTFUL_PREVIEW_ENABLED || 'false').trim() === 'true';
   const preview = previewHeader && previewEnv;
 
-  const typedLocale = (locale === 'de-DE' ? 'de-DE' : 'en-GB') as SupportedLocale;
-
-  if (typedLocale !== locale) {
+  if (!isSupportedLocale(locale)) {
     return new NextResponse('Locale not supported', { status: 400 });
   }
-  
-  const data = await cachedFetchHome(typedLocale, preview);
+
+  const data = await cachedFetchHome(locale, preview);
   if (!data) return new NextResponse('Not found', { status: 404 });
 
   // Prefer relying on unstable_cache; avoid CDN caching for this API

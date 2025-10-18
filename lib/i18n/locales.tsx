@@ -35,6 +35,15 @@ export function isSupportedLocale(locale: string): locale is SupportedLocale {
   return SUPPORTED_LOCALES.includes(locale as SupportedLocale);
 }
 
+/**
+ * Validates and coerces a locale string to a SupportedLocale type.
+ * Returns the locale if valid, otherwise returns the default locale.
+ * Useful for validating route params or user input.
+ */
+export function validateLocale(locale: string): SupportedLocale {
+  return isSupportedLocale(locale) ? locale : DEFAULT_LOCALE;
+}
+
 export function localeToCurrency(locale: SupportedLocale): 'EUR' | 'GBP' {
   return locale === 'de-DE' ? 'EUR' : 'GBP';
 }

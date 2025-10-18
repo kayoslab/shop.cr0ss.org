@@ -3,7 +3,8 @@ import { unstable_cache as cache } from 'next/cache';
 import { appGetCategoryBySlug, appListProductsByCategoryId } from '@/lib/ct/categories';
 import { mapProductProjectionToDTO } from '@/lib/ct/products';
 import type { Category, ProductProjectionPagedQueryResponse } from '@commercetools/platform-sdk';
-import { SupportedLocale, localeToCountry, localeToCurrency, otherLocale } from '@/lib/i18n/locales';
+import { SupportedLocale, localeToCountry, localeToCurrency, otherLocale, isSupportedLocale } from '@/lib/i18n/locales';
+import { categoryTags } from '@/lib/cache/tags';
 
 async function _fetchCategoryPLP(
   locale: SupportedLocale,
@@ -58,7 +59,7 @@ async function _fetchCategoryPLP(
 
 const cached = (locale: SupportedLocale, slug: string, qs: string, currency: string, country: string) =>
   cache(_fetchCategoryPLP, ['api-plp', locale, slug, qs, currency, country], {
-    tags: [`plp:cat:${slug}:${locale}`],
+    tags: [categoryTags.plp(slug, locale)],
     revalidate: 300,
   })(locale, slug, qs, currency, country);
 
@@ -67,18 +68,17 @@ export async function GET(
   ctx: { params: Promise<{ locale: string; slug: string }> }
 ) {
   const { locale, slug } = await ctx.params;
-  const typedLocale = (locale === 'de-DE' ? 'de-DE' : 'en-GB') as SupportedLocale;
 
-  if (typedLocale !== locale) {
+  if (!isSupportedLocale(locale)) {
     return new NextResponse('Locale not supported', { status: 400 });
   }
 
   const url = new URL(req.url);
-  const currency = url.searchParams.get('currency') ?? localeToCurrency(typedLocale);
-  const country  = url.searchParams.get('country')  ?? localeToCountry(typedLocale);
+  const currency = url.searchParams.get('currency') ?? localeToCurrency(locale);
+  const country  = url.searchParams.get('country')  ?? localeToCountry(locale);
 
   try {
-    const data = await cached(typedLocale, slug, url.searchParams.toString(), currency, country);
+    const data = await cached(locale, slug, url.searchParams.toString(), currency, country);
     if (!data) return new NextResponse('Not found', { status: 404 });
 
     // Prefer letting unstable_cache handle caching

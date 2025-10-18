@@ -3,17 +3,18 @@ import { notFound } from 'next/navigation';
 import { Analytics } from '@vercel/analytics/next';
 import Nav from '@/components/Nav';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
-import { SupportedLocale } from '@/lib/i18n/locales';
+import { SupportedLocale, isSupportedLocale } from '@/lib/i18n/locales';
 import { absoluteBase } from '@/lib/networking/absoluteBase';
+import { categoryTags } from '@/lib/cache/tags';
 
 export const revalidate = 3600;
 
 async function fetchCategories(locale: SupportedLocale): Promise<CategoryDTO[]> {
   try {
     const absoluteBasePath = absoluteBase();
-    
+
     const res = await fetch(`${absoluteBasePath}/${locale}/api/categories`, {
-      next: { revalidate: 3600, tags: [`categories:${locale}`] },
+      next: { revalidate: 3600, tags: [categoryTags.all(locale)] },
     });
     if (!res.ok) return [];
     const data = (await res.json()) as { items?: CategoryDTO[] } | CategoryDTO[] | null | undefined;
@@ -44,18 +45,17 @@ export default async function RootLayout({
 }) {
   const { locale } = await params;
 
-  const typedLocale = (locale === 'de-DE' ? 'de-DE' : 'en-GB') as SupportedLocale;
-  if (typedLocale !== locale) {
+  if (!isSupportedLocale(locale)) {
     return notFound();
   }
-  
-  const categories = await fetchCategories(typedLocale);
+
+  const categories = await fetchCategories(locale);
   const top = topLevel(categories);
 
   return (
-    <html lang={typedLocale} className="h-full">
+    <html lang={locale} className="h-full">
       <body className="min-h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-        <Nav topLevel={top} locale={typedLocale} />
+        <Nav topLevel={top} locale={locale} />
         {children}
         <Analytics />
       </body>

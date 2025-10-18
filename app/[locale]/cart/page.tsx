@@ -8,34 +8,7 @@ import CartClient from '@/components/cart/CartClient';
 import { absoluteBase } from '@/lib/networking/absoluteBase';
 import { headers } from 'next/headers';
 import Link from 'next/link';
-
-function formatMoney(centAmount: number, currency: string) {
-  return `${(centAmount / 100).toFixed(2)} ${currency}`;
-}
-
-function PriceCell({
-  unit,
-}: {
-  unit?: { currencyCode: string; centAmount: number; discounted?: boolean; discountedCentAmount?: number };
-}) {
-  if (!unit) return <span>-</span>;
-  const { currencyCode, centAmount, discounted, discountedCentAmount } = unit;
-
-  if (discounted && typeof discountedCentAmount === 'number') {
-    return (
-      <div className="flex items-baseline gap-2">
-        <span className="text-sm font-semibold">
-          {formatMoney(discountedCentAmount, currencyCode)}
-        </span>
-        <span className="text-xs text-gray-500 line-through">
-          {formatMoney(centAmount, currencyCode)}
-        </span>
-      </div>
-    );
-  }
-
-  return <span className="text-sm font-medium">{formatMoney(centAmount, currencyCode)}</span>;
-}
+import { formatCentAmount, formatCartPrice } from '@/lib/utils/formatPrice';
 
 async function fetchCart(locale: SupportedLocale): Promise<CartDTO | null> {
   const base = absoluteBase();
@@ -93,7 +66,7 @@ export default async function CartPage({
 
                 {/* Unit price with strike-through old price when discounted */}
                 <div className="min-w-[7rem] text-right">
-                  <PriceCell unit={li.unitPrice} />
+                  {formatCartPrice(li.unitPrice)}
                 </div>
 
                 {/* Quantity controls */}
@@ -107,7 +80,7 @@ export default async function CartPage({
               <div className="text-sm text-gray-500">Total</div>
               <div className="text-xl font-semibold">
                 {cart.total
-                  ? formatMoney(cart.total.centAmount, cart.total.currencyCode)
+                  ? formatCentAmount(cart.total.centAmount, cart.total.currencyCode)
                   : '-'}
               </div>
             </div>

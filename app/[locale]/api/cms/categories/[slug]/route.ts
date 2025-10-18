@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { unstable_cache as cache } from 'next/cache';
 import { fetchCategoryContentFromCMS } from '@/lib/contentful/category';
-import { SupportedLocale } from '@/lib/i18n/locales';
+import { SupportedLocale, isSupportedLocale } from '@/lib/i18n/locales';
+import { cmsTags } from '@/lib/cache/tags';
 
 export interface CategoryCMSContentDTO {
   title: string;
@@ -25,7 +26,7 @@ const cachedFetchCategory = (
   preview: boolean
 ) =>
   cache(_fetchCategory, ['api-cms-category', slug, locale, String(preview)], {
-    tags: [`cms:categories:${slug}:${locale}`],
+    tags: [cmsTags.category(slug, locale)],
     revalidate: 60 * 5,
   })(slug, locale, preview);
 
@@ -38,13 +39,11 @@ export async function GET(
   const previewEnv = (process.env.CONTENTFUL_PREVIEW_ENABLED || 'false').trim() === 'true';
   const preview = previewHeader && previewEnv;
 
-  const typedLocale = (locale === 'de-DE' ? 'de-DE' : 'en-GB') as SupportedLocale;
-
-  if (typedLocale !== locale) {
+  if (!isSupportedLocale(locale)) {
     return new NextResponse('Locale not supported', { status: 400 });
   }
-  
-  const data = await cachedFetchCategory(slug, typedLocale, preview);
+
+  const data = await cachedFetchCategory(slug, locale, preview);
 
   if (!data) return new NextResponse('Not found', { status: 404 });
 

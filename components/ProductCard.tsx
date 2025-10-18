@@ -2,35 +2,12 @@ import Link from "next/link"
 import Image from "next/image"
 import { Card } from "@/components/card"
 import { type ProductDTO } from '@/lib/ct/dto/product';
+import { formatPrice } from '@/lib/utils/formatPrice';
 
 interface ProductCardProps {
   product: ProductDTO
   compact?: boolean
-  locale: string 
-}
-
-function formatPrice(p?: {
-  currencyCode: string;
-  centAmount: number;
-  discounted?: boolean;
-  discountedCentAmount?: number;
-}) {
-  if (!p) return '—';
-  const base = (p.centAmount / 100).toFixed(2);
-  if (p.discounted && p.discountedCentAmount && p.discountedCentAmount < p.centAmount) {
-    const disc = (p.discountedCentAmount / 100).toFixed(2);
-    return (
-      <div className="flex items-baseline gap-2">
-        <span className="font-semibold">
-          {disc} {p.currencyCode}
-        </span>
-        <span className="text-xs text-gray-500 line-through">
-          {base} {p.currencyCode}
-        </span>
-      </div>
-    );
-  }
-  return `${base} ${p.currencyCode}`;
+  locale: string
 }
 
 function getPrimaryImage(p: ProductDTO): { url: string; alt: string } | null {

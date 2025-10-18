@@ -10,7 +10,9 @@ import {
   DEFAULT_COUNTRY,
   DEFAULT_CURRENCY,
   DEFAULT_LOCALE,
+  isSupportedLocale,
 } from '@/lib/i18n/locales';
+import { productTags } from '@/lib/cache/tags';
 
 type ListResponse = {
   items: ProductProjectionDTO[];
@@ -50,7 +52,7 @@ const cachedFetchProducts = (
   country: SupportedCountry
 ) =>
   cache(_fetchProducts, ['api-products', qsString, locale, currency, country], {
-    tags: [`products:${locale}`],
+    tags: [productTags.all(locale)],
     revalidate: 300,
   })(qsString, locale, currency, country);
 
@@ -59,17 +61,17 @@ export async function GET(
   ctx: { params: Promise<{ locale: string }> } // Next 15: params is a Promise
 ) {
   const { locale } = await ctx.params;
-  const typedLocale = (locale === 'de-DE' ? 'de-DE' : 'en-GB') as SupportedLocale;
 
-  if (typedLocale !== locale) {
+  if (!isSupportedLocale(locale)) {
     return new NextResponse('Locale not supported', { status: 400 });
   }
+
   const url = new URL(req.url);
 
   const currency = (url.searchParams.get('currency') as SupportedCurrency) ?? DEFAULT_CURRENCY;
   const country  = (url.searchParams.get('country')  as SupportedCountry)  ?? DEFAULT_COUNTRY;
 
-  const data = await cachedFetchProducts(url.searchParams.toString(), typedLocale, currency, country);
+  const data = await cachedFetchProducts(url.searchParams.toString(), locale, currency, country);
 
   // Let unstable_cache handle freshness; keep HTTP response non-cacheable
   return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });

@@ -4,27 +4,10 @@ import ProductGalleryClient from '@/components/pdp/ProductGalleryClient';
 import type { ProductProjectionDTO } from '@/lib/ct/dto/product';
 import { SupportedLocale, localeToCountry, localeToCurrency, SUPPORTED_LOCALES } from '@/lib/i18n/locales';
 import { absoluteBase } from '@/lib/networking/absoluteBase';
+import { formatMoney } from '@/lib/utils/formatPrice';
 
 export const runtime = 'edge';
 export const revalidate = 0;
-
-type Money = { currencyCode: string; centAmount: number };
-
-function formatMoney(m?: Money, discounted?: Money) {
-  if (!m) return '';
-  const base = (m.centAmount / 100).toFixed(2);
-  const code = m.currencyCode;
-  if (discounted) {
-    const disc = (discounted.centAmount / 100).toFixed(2);
-    return (
-      <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-semibold">{disc} {code}</span>
-        <span className="text-sm text-gray-500 line-through">{base} {code}</span>
-      </div>
-    );
-  }
-  return <span className="text-2xl font-semibold">{base} {code}</span>;
-}
 
 async function fetchProduct(id: string, locale: SupportedLocale): Promise<ProductProjectionDTO | null> {
   const absoluteBasePath = absoluteBase();

@@ -4,6 +4,7 @@ import { fetchHomeFromCMS } from '@/lib/contentful/home';
 import type { HomeDTO } from '@/lib/contentful/dto/home';
 import { SupportedLocale, isSupportedLocale } from '@/lib/i18n/locales';
 import { cmsTags } from '@/lib/cache/tags';
+import { ErrorResponses } from '@/lib/utils/apiErrors';
 
 async function _fetchHome(locale: SupportedLocale, preview: boolean): Promise<HomeDTO | null> {
   return fetchHomeFromCMS(locale, preview);
@@ -30,11 +31,11 @@ export async function GET(
   const preview = previewHeader && previewEnv;
 
   if (!isSupportedLocale(locale)) {
-    return new NextResponse('Locale not supported', { status: 400 });
+    return ErrorResponses.localeNotSupported();
   }
 
   const data = await cachedFetchHome(locale, preview);
-  if (!data) return new NextResponse('Not found', { status: 404 });
+  if (!data) return ErrorResponses.notFound('Home page content');
 
   // Prefer relying on unstable_cache; avoid CDN caching for this API
   // return NextResponse.json(data, {

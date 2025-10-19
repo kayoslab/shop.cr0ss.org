@@ -57,7 +57,8 @@ Data Providers
 
 - **Next 15 compliance**  
   In **pages and route handlers**, `params` and `searchParams` are **Promises** and must be awaited:
-  ```ts
+  
+```ts
   export async function GET(req, ctx: { params: Promise<{ locale: string }> }) {
     const { locale } = await ctx.params;
   }
@@ -69,6 +70,7 @@ Data Providers
     searchParams: Promise<...>;
   }) { ... }
 ```
+
 
 ## Routes & caching
 
@@ -125,12 +127,13 @@ Data Providers
 
 ## Tech stack
 
-- **Runtime:** Next.js (App Router), Vercel (Edge + Node runtimes)
+- **Runtime:** Next.js 15.5 (App Router), Vercel (Edge + Node runtimes)
 - **Commerce:** commercetools SDK (anonymous sessions)
 - **CMS:** Contentful (CDA, optional Preview API)
-- **Styling:** Tailwind CSS
+- **Styling:** Tailwind CSS v4
 - **Images:** next/image with responsive sizes
 - **TypeScript** everywhere; eslint + strict mode
+- **Testing:** Vitest with React Testing Library
 
 ## Local setup
 
@@ -170,6 +173,13 @@ pnpm dev
 ```
 Visit `http://localhost:3000`.
 
+4. Test (optional)
+```
+pnpm test          # Run tests once
+pnpm test:watch    # Run tests in watch mode
+pnpm test:coverage # Generate coverage report
+```
+
 ## Webhooks / Subscriptions (optional but recommended)
 **commercetools Subscription**
 - Merchant Center → Project settings → Subscriptions
@@ -183,11 +193,54 @@ Visit `http://localhost:3000`.
 - Authorization: Bearer ${CONTENTFUL_WEBHOOK_SECRET}
 - Trigger on publish/unpublish for the homepage content type.
 
+## Code Architecture & Best Practices
+
+This codebase follows modern architectural patterns for maintainability and consistency.
+
+### 📋 AI/LLM Guardrails
+
+**See `.ai/` directory for comprehensive coding standards and guardrails.**
+
+These guardrails define:
+- TypeScript standards and type safety requirements
+- Next.js 15 patterns and conventions
+- File organization and naming rules
+- Error handling patterns
+- Caching strategy guidelines
+- Component development best practices
+- Testing requirements
+
+When making changes or using AI assistants, refer to `.ai/README.md` for the full set of standards.
+
+### Shared Utilities
+- **Price Formatting** (`lib/utils/formatPrice.tsx`): Centralized price display with discount handling
+- **Locale Validation** (`lib/i18n/locales.tsx`): Type-safe locale validation utilities
+- **Cache Tags** (`lib/cache/tags.ts`): Centralized cache tag generation for consistent revalidation
+- **Cache Configuration** (`lib/config/cache.ts`): Centralized cache revalidation time constants
+- **Placeholder Constants** (`lib/config/placeholders.ts`): Centralized placeholder image paths
+- **Error Handling** (`lib/utils/apiErrors.ts`): Standardized API error responses used across all API routes
+- **API Types** (`lib/types/api.ts`): Shared TypeScript types for API contracts
+
+### UI Components
+- **Error Boundaries** (`components/ErrorBoundary.tsx`): User-friendly error displays
+- **Loading States** (`components/LoadingState.tsx`): Reusable loading spinners and skeletons
+- **Error/Loading Routes**: Each route has `error.tsx` and `loading.tsx` files
+
+### Type Safety
+- **Contentful Types** (`lib/contentful/types.ts`): Type-safe CMS content access
+- **DTO Layer** (`lib/*/dto/`): Decoupled data transfer objects for vendor APIs
+- **Strict TypeScript**: Full type coverage with strict mode enabled
+
+### Testing
+- **Unit Tests**: Tests for utilities in `__tests__` directories
+- **Vitest**: Fast unit test runner with React Testing Library
+- **Coverage**: Run `pnpm test:coverage` for coverage reports
+
 ## Known limitations / next steps
 - **Cart & checkout:** stub only (intentionally out of scope for demo).
 - **A/B or geo personalization:** demo uses low-entropy segment cookie; can extend via Edge Config.
-- **Contentful typings:** consider generating types from the space to remove remaining “stringly typed” areas.
-- **Testing:** add unit tests for DTO mappers and a minimal Playwright flow (home → category → PDP).
+- **Variant selection:** Non-functional in demo; would require client-side state or shallow routing in production.
+- **Expand test coverage:** Add integration tests and E2E tests with Playwright.
 
 ## License
 This repository is provided for demo purposes only. Check vendor SDK licenses commercetools, Contentful and ensure you comply with their terms before production use.

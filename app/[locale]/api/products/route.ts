@@ -9,10 +9,11 @@ import {
   SupportedCurrency,
   DEFAULT_COUNTRY,
   DEFAULT_CURRENCY,
-  DEFAULT_LOCALE,
   isSupportedLocale,
 } from '@/lib/i18n/locales';
 import { productTags } from '@/lib/cache/tags';
+import { CACHE_REVALIDATION } from '@/lib/config/cache';
+import { ErrorResponses } from '@/lib/utils/apiErrors';
 
 type ListResponse = {
   items: ProductProjectionDTO[];
@@ -53,7 +54,7 @@ const cachedFetchProducts = (
 ) =>
   cache(_fetchProducts, ['api-products', qsString, locale, currency, country], {
     tags: [productTags.all(locale)],
-    revalidate: 300,
+    revalidate: CACHE_REVALIDATION.PRODUCTS,
   })(qsString, locale, currency, country);
 
 export async function GET(
@@ -63,7 +64,7 @@ export async function GET(
   const { locale } = await ctx.params;
 
   if (!isSupportedLocale(locale)) {
-    return new NextResponse('Locale not supported', { status: 400 });
+    return ErrorResponses.localeNotSupported();
   }
 
   const url = new URL(req.url);

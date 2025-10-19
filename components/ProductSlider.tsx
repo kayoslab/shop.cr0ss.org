@@ -1,7 +1,13 @@
-import { type ProductDTO } from '@/lib/ct/dto/product';
+import type { ProductDTO } from '@/lib/ct/dto/product';
 import { ProductCard } from './ProductCard';
 
-export default async function ProductSlider({items, heading = 'Recommended', locale }: { items: ProductDTO[]; heading?: string; locale: string }) {
+interface ProductSliderProps {
+  items: ProductDTO[];
+  heading?: string;
+  locale: string;
+}
+
+export async function ProductSlider({ items, heading = 'Recommended', locale }: ProductSliderProps) {
   return (
     <section className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">

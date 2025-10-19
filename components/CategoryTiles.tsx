@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
-import { Card } from '@/components/card';
+import { Card } from '@/components/Card';
+import { PLACEHOLDER_IMAGES } from '@/lib/config/placeholders';
 
 export function CategoryTiles({
   heading = 'Shop by Category',
@@ -28,7 +29,7 @@ export function CategoryTiles({
               <Card className="h-full overflow-hidden rounded-2xl border-border transition-shadow hover:shadow-lg flex flex-col">
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <Image
-                    src={category.content?.imageUrl || '/placeholder.svg?height=200&width=400'}
+                    src={category.content?.imageUrl || PLACEHOLDER_IMAGES.CATEGORY}
                     alt={category.name}
                     fill
                     className="object-cover transition-transform duration-300 group-hover:scale-105"

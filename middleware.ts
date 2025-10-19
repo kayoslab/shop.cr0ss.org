@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { SUPPORTED_LOCALES, acceptLanguageToLocale } from '@/lib/i18n/locales';
+import { SUPPORTED_LOCALES, acceptLanguageToLocale, type SupportedLocale } from '@/lib/i18n/locales';
 
 export const config = { matcher: ['/:path*'] };
 
@@ -38,10 +38,10 @@ export default function middleware(req: NextRequest) {
   setVariant(req, res);
 
   const { pathname } = req.nextUrl;
-  if (pathname.startsWith('/_next') || pathname.startsWith('/assets') || pathname.includes('/api/')) return;
+  if (pathname.startsWith('/_next') || pathname.startsWith('/assets') || pathname.includes('/api/')) return res;
 
   const seg = pathname.split('/')[1];
-  if (!SUPPORTED_LOCALES.includes(seg as any)) {
+  if (!seg || !SUPPORTED_LOCALES.includes(seg as SupportedLocale)) {
     const acceptHeader = req.headers.get('accept-language') || '';
     const parsed = acceptLanguageToLocale(acceptHeader);
 

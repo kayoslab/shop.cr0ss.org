@@ -7,6 +7,7 @@ import { SupportedLocale, isSupportedLocale } from '@/lib/i18n/locales';
 import { absoluteBase } from '@/lib/networking/absoluteBase';
 import { categoryTags } from '@/lib/cache/tags';
 
+// Cache revalidation: 1 hour (see lib/config/cache.ts for values)
 export const revalidate = 3600;
 
 async function fetchCategories(locale: SupportedLocale): Promise<CategoryDTO[]> {

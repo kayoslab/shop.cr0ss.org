@@ -25,12 +25,9 @@ async function fetchProducts(locale: SupportedLocale): Promise<ListResponse | nu
 
 export default async function ProductsPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-
   const { locale } = await params;
   const localeTyped = locale as SupportedLocale;
   if (!SUPPORTED_LOCALES.includes(localeTyped)) {

@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Card } from "@/components/card"
+import { Card } from "@/components/Card"
 import { type ProductDTO } from '@/lib/ct/dto/product';
 import { formatPrice } from '@/lib/utils/formatPrice';
 

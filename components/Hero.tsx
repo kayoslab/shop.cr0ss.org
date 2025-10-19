@@ -1,19 +1,21 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
-export default function Hero({
-  title,
-  subtitle,
-  ctaText = 'Shop Products',
-  ctaLink = '/products',
-  imageUrl,
-}: {
+interface HeroProps {
   title: string;
   subtitle?: string;
   ctaText?: string;
   ctaLink?: string;
   imageUrl?: string;
-}) {
+}
+
+export function Hero({
+  title,
+  subtitle,
+  ctaText = 'Shop Products',
+  ctaLink = '/products',
+  imageUrl,
+}: HeroProps) {
   return (
     <section className="relative w-full overflow-hidden bg-muted">
       <div className="container mx-auto px-4">

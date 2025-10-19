@@ -270,7 +270,7 @@ export async function searchProductProjectionsBySlug(slug: string, locale = DEFA
   return res.body.results[0] || null;
 }
 
-export async function getProductProjections(params: { limit?: number; offset?: number, } = {}, ctx: PriceContext, locale = DEFAULT_LOCALE) {
+export async function getProductProjections(params: { limit?: number; offset?: number, } = {}, ctx: PriceContext, _locale = DEFAULT_LOCALE) {
   const { limit = 12, offset = 0 } = params;
   const res = await apiRootApp
     .productProjections()
@@ -286,7 +286,7 @@ export async function getProductProjections(params: { limit?: number; offset?: n
   return res.body;
 }
 
-export async function getProductProjectionById(id: string, ctx: PriceContext, locale = DEFAULT_LOCALE) {
+export async function getProductProjectionById(id: string, ctx: PriceContext, _locale = DEFAULT_LOCALE) {
   const res = await apiRootApp
     .productProjections()
     .withId({ ID: id })

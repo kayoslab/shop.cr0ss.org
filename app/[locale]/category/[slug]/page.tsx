@@ -1,9 +1,10 @@
 import type { ProductDTO, ProductProjectionDTO } from '@/lib/ct/dto/product';
 import { ProductCard } from '@/components/ProductCard';
 import { SupportedLocale, localeToCountry, localeToCurrency } from '@/lib/i18n/locales';
-import { CategoryCMSContentDTO } from '../../api/cms/categories/[slug]/route';
+import type { CategoryCMSContentDTO } from '@/app/[locale]/api/cms/categories/[slug]/route';
 import { absoluteBase } from '@/lib/networking/absoluteBase';
 
+// Cache revalidation: 10 minutes (see lib/config/cache.ts for values)
 export const revalidate = 600;
 
 interface ListResponse {

@@ -1,10 +1,10 @@
-import VariantPickerClient from '@/components/pdp/VariantPickerClient';
 import AddToBasketClient from '@/components/pdp/AddToBasketClient';
 import ProductGalleryClient from '@/components/pdp/ProductGalleryClient';
 import type { ProductProjectionDTO } from '@/lib/ct/dto/product';
 import { SupportedLocale, localeToCountry, localeToCurrency, SUPPORTED_LOCALES } from '@/lib/i18n/locales';
 import { absoluteBase } from '@/lib/networking/absoluteBase';
 import { formatMoney } from '@/lib/utils/formatPrice';
+import { PLACEHOLDER_IMAGES } from '@/lib/config/placeholders';
 
 export const runtime = 'edge';
 export const revalidate = 0;
@@ -24,10 +24,8 @@ async function fetchProduct(id: string, locale: SupportedLocale): Promise<Produc
 
 export default async function ProductDetailPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ locale: string; id: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale, id } = await params;
   const localeTyped = locale as SupportedLocale;
@@ -57,10 +55,10 @@ export default async function ProductDetailPage({
     ? { currencyCode: master.price.currencyCode, centAmount: master.price.centAmount }
     : undefined;
   const discounted = master?.price?.discountedCentAmount
-    ? { currencyCode: master.price.currencyCode, centAmount: master.price.discountedCentAmount! }
+    ? { currencyCode: master.price.currencyCode, centAmount: master.price.discountedCentAmount }
     : undefined;
 
-  const gallery = master?.images?.length ? master.images : [{ url: '/placeholder.png', alt: 'Product' }];
+  const gallery = master?.images?.length ? master.images : [{ url: PLACEHOLDER_IMAGES.PRODUCT, alt: 'Product' }];
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
@@ -74,10 +72,12 @@ export default async function ProductDetailPage({
           <h1 className="text-3xl font-semibold">{product.name}</h1>
           <div className="mt-3">{formatMoney(price, discounted)}</div>
 
-          {/* Variant selector (client) when more than one variant */}
+          {/* Variant information (demo app - variant selection not implemented) */}
           {product.variants.length > 1 && (
-            <div className="mt-6">
-              <VariantPickerClient product={product} />
+            <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                This product has {product.variants.length} variants. Showing master variant.
+              </p>
             </div>
           )}
 

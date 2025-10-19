@@ -1,7 +1,7 @@
 // components/Nav.tsx
 import Link from 'next/link';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
-import LangSwitcher from '@/components/lang-switcher';
+import LangSwitcher from '@/components/LangSwitcher';
 import type { SupportedLocale } from '@/lib/i18n/locales';
 import CartCountClient from '@/components/cart/CartCountClient';
 

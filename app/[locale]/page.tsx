@@ -1,5 +1,5 @@
-import Hero from '@/components/Hero';
-import ProductSlider from '@/components/ProductSlider';
+import { Hero } from '@/components/Hero';
+import { ProductSlider } from '@/components/ProductSlider';
 import { CategoryTiles } from '@/components/CategoryTiles';
 import type { ProductDTO } from '@/lib/ct/dto/product';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
@@ -8,6 +8,7 @@ import type { HomeDTO } from '@/lib/contentful/dto/home';
 import { localeToCurrency, localeToCountry, SupportedLocale } from '@/lib/i18n/locales';
 import { absoluteBase } from '@/lib/networking/absoluteBase';
 
+// Cache revalidation: 5 minutes (see lib/config/cache.ts for values)
 export const revalidate = 300;
 
 type Params = { locale: SupportedLocale };

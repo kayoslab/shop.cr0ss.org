@@ -3,6 +3,7 @@ import { unstable_cache as cache } from 'next/cache';
 import { fetchCategoryContentFromCMS } from '@/lib/contentful/category';
 import { SupportedLocale, isSupportedLocale } from '@/lib/i18n/locales';
 import { cmsTags } from '@/lib/cache/tags';
+import { ErrorResponses } from '@/lib/utils/apiErrors';
 
 export interface CategoryCMSContentDTO {
   title: string;
@@ -40,12 +41,12 @@ export async function GET(
   const preview = previewHeader && previewEnv;
 
   if (!isSupportedLocale(locale)) {
-    return new NextResponse('Locale not supported', { status: 400 });
+    return ErrorResponses.localeNotSupported();
   }
 
   const data = await cachedFetchCategory(slug, locale, preview);
 
-  if (!data) return new NextResponse('Not found', { status: 404 });
+  if (!data) return ErrorResponses.notFound('Category content');
 
   // Let unstable_cache handle caching; keep the HTTP response non-cacheable at CDN
   // return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });

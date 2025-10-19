@@ -49,7 +49,9 @@ export function formatPrice(price?: PriceData): string | React.JSX.Element {
     );
   }
 
-  return basePrice;
+  return (
+    <span className="font-semibold">{basePrice}</span>
+  );
 }
 
 /**

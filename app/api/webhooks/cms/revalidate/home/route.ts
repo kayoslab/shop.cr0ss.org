@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { SUPPORTED_LOCALES } from '@/lib/i18n/locales';
 import { ErrorResponses } from '@/lib/utils/apiErrors';
+import { cmsTags, categoryTags, productTags } from '@/lib/cache/tags';
 
 export async function POST(request: NextRequest) {
     const authz = request.headers.get('authorization') || '';
@@ -19,16 +20,18 @@ export async function POST(request: NextRequest) {
         const categories = body.fields?.featuredCategorySlugs?.[locale] || null;
         if (categories && Array.isArray(categories)) {
             for (const catSlug of categories) {
-                const revalidationTag = `plp:cat:${catSlug}:${locale}`;
-                revalidateTag(revalidationTag);
-                revalidatedTags.add(revalidationTag);
+                const tag = categoryTags.plp(catSlug, locale);
+                revalidateTag(tag);
+                revalidatedTags.add(tag);
             }
         }
 
-        revalidateTag(`cms:home:${locale}`);
-        revalidateTag(`products:${locale}`);
-        revalidatedTags.add(`cms:home:${locale}`);
-        revalidatedTags.add(`products:${locale}`);
+        const homeTag = cmsTags.home(locale);
+        const productsTag = productTags.all(locale);
+        revalidateTag(homeTag);
+        revalidateTag(productsTag);
+        revalidatedTags.add(homeTag);
+        revalidatedTags.add(productsTag);
     }
 
     return NextResponse.json({ ok: true, revalidated: Array.from(revalidatedTags) });

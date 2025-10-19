@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { SUPPORTED_LOCALES } from '@/lib/i18n/locales';
 import { ErrorResponses } from '@/lib/utils/apiErrors';
+import { cmsTags } from '@/lib/cache/tags';
 
 export async function POST(request: NextRequest) {
     const authz = request.headers.get('authorization') || '';
@@ -17,12 +18,11 @@ export async function POST(request: NextRequest) {
     const revalidatedTags = new Set<string>();
     for (const locale of SUPPORTED_LOCALES) {
         const slug = body.fields?.slug?.[locale] || null;
-        // const categories = body.fields?.categories?.[locale] || null;
-        const revalidationTag = `cms:categories:${slug}:${locale}`;
-        revalidateTag(revalidationTag);
-        revalidatedTags.add(revalidationTag);
-        // revalidateTag(`categories:${locale}`);
-        // revalidateTag(`cms:home:${locale}`);
+        if (slug) {
+            const tag = cmsTags.category(slug, locale);
+            revalidateTag(tag);
+            revalidatedTags.add(tag);
+        }
     }
 
     return NextResponse.json({ ok: true, revalidated: Array.from(revalidatedTags) });

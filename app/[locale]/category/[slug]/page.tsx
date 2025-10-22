@@ -1,66 +1,49 @@
-import type { ProductDTO, ProductProjectionDTO } from '@/lib/ct/dto/product';
+import type { ProductProjectionDTO } from '@/lib/ct/dto/product';
 import { ProductCard } from '@/components/ProductCard';
-import { SupportedLocale, localeToCountry, localeToCurrency } from '@/lib/i18n/locales';
-import type { CategoryCMSContentDTO } from '@/app/[locale]/api/cms/categories/[slug]/route';
-import { absoluteBase } from '@/lib/networking/absoluteBase';
+import { SupportedLocale, SUPPORTED_LOCALES } from '@/lib/i18n/locales';
+import { getAllCategorySlugs } from '@/lib/ct/categories';
+import { fetchFullPLPData } from '@/lib/helpers/plpData';
 
 // Cache revalidation: 10 minutes (see lib/config/cache.ts for values)
 export const revalidate = 600;
 
-interface ListResponse {
-  categoryId: string;
-  categorySlug: string;
-  items: ProductDTO[];
-  total: number;
-  limit: number;
-  offset: number;
-}
+// Enable ISR for dynamic category pages not pre-rendered at build time
+export const dynamicParams = true;
 
-async function fetchPLP(
-  locale: SupportedLocale,
-  slug: string,
-  searchParams: Record<string, string | string[] | undefined>
-): Promise<ListResponse | null> {
-  const absoluteBasePath = absoluteBase();
+/**
+ * Pre-render category pages at build time for ISR
+ * This enables proper cache headers (max-age=600) instead of dynamic rendering
+ */
+export async function generateStaticParams() {
+  const params: { locale: SupportedLocale; slug: string }[] = [];
 
-  const limit = typeof searchParams.limit === 'string' ? searchParams.limit : '24';
-  const offset = typeof searchParams.offset === 'string' ? searchParams.offset : '0';
+  // Fetch categories for each locale
+  for (const locale of SUPPORTED_LOCALES) {
+    try {
+      const slugs = await getAllCategorySlugs(locale);
+      
+      // Add all category slugs for this locale
+      for (const slug of slugs) {
+        params.push({ locale, slug });
+      }
+    } catch (error) {
+      console.error(`Failed to fetch category slugs for locale ${locale}:`, error);
+    }
+  }
 
-  const qs = new URLSearchParams({
-    limit,
-    offset,
-    currency: localeToCurrency(locale),
-    country: localeToCountry(locale),
-  }).toString();
-
-  const res = await fetch(`${absoluteBasePath}/${locale}/api/categories/${slug}/products?${qs}`, {
-    next: { 
-      revalidate,
-      tags: [`plp:cat:${slug}:${locale}`] 
-    },
-  });
-  if (!res.ok) return null;
-  return (await res.json()) as ListResponse;
-}
-
-async function fetchCategoryContentFromCMS(locale: SupportedLocale, slug: string): Promise<CategoryCMSContentDTO | null> {
-  const absoluteBasePath = absoluteBase();
-  const res = await fetch(`${absoluteBasePath}/${locale}/api/cms/categories/${slug}`, {
-    next: { tags: [`cms:categories:${slug}:${locale}`] },
-  });
-  if (!res.ok) return null;
-  return res.json() as Promise<CategoryCMSContentDTO>;
+  return params;
 }
 
 export default async function CategoryPage({
   params, searchParams,
 }: {
-  params: { locale: SupportedLocale; slug: string };
-  searchParams: Record<string, string | string[] | undefined>;
+  params: Promise<{ locale: SupportedLocale; slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale, slug } = await params;
   const sp = await searchParams;
-  const [plpRaw, cms] = await Promise.all([fetchPLP(locale, slug, sp), fetchCategoryContentFromCMS(locale, slug)]);
+  
+  const { plp: plpRaw, cms } = await fetchFullPLPData(locale, slug, sp);
 
   if (!plpRaw) {
     return (
@@ -71,8 +54,8 @@ export default async function CategoryPage({
     );
   }
 
-  const items: ProductProjectionDTO[] = Array.isArray((plpRaw as { items: ProductProjectionDTO[] })?.items)
-    ? (plpRaw.items as ProductProjectionDTO[])
+  const items: ProductProjectionDTO[] = Array.isArray(plpRaw.items)
+    ? plpRaw.items
     : [];
   const total = typeof plpRaw.total === 'number' ? plpRaw.total : items.length;
   const showIntro = Boolean(cms?.description && cms?.imageUrl);

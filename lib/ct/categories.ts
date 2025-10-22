@@ -80,3 +80,22 @@ export function buildCategoryTree(categories: Category[], locale: SupportedLocal
 
   return roots;
 }
+
+/**
+ * Get all category slugs for a given locale, flattening the category tree.
+ * Useful for generateStaticParams to pre-render category pages.
+ */
+export async function getAllCategorySlugs(locale: SupportedLocale): Promise<string[]> {
+  const categories = await appListCategories(200);
+  const tree = buildCategoryTree(categories, locale);
+  
+  // Flatten the tree to get all slugs
+  const flattenSlugs = (nodes: CategoryDTO[]): string[] => {
+    return nodes.flatMap(node => [
+      node.slug,
+      ...(node.children ? flattenSlugs(node.children) : [])
+    ]);
+  };
+  
+  return flattenSlugs(tree);
+}

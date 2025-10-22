@@ -1,6 +1,7 @@
 import './globals.css';
 import { notFound } from 'next/navigation';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import Nav from '@/components/Nav';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
 import { SupportedLocale, isSupportedLocale } from '@/lib/i18n/locales';
@@ -59,6 +60,7 @@ export default async function RootLayout({
         <Nav topLevel={top} locale={locale} />
         {children}
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

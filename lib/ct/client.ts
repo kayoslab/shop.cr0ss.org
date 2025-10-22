@@ -1,4 +1,3 @@
-// lib/ct/client.ts
 import { ClientBuilder } from '@commercetools/sdk-client-v2';
 import { createApiBuilderFromCtpClient } from '@commercetools/platform-sdk';
 

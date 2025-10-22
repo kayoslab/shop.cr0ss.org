@@ -197,21 +197,6 @@ pnpm test:coverage # Generate coverage report
 
 This codebase follows modern architectural patterns for maintainability and consistency.
 
-### 📋 AI/LLM Guardrails
-
-**See `.ai/` directory for comprehensive coding standards and guardrails.**
-
-These guardrails define:
-- TypeScript standards and type safety requirements
-- Next.js 15 patterns and conventions
-- File organization and naming rules
-- Error handling patterns
-- Caching strategy guidelines
-- Component development best practices
-- Testing requirements
-
-When making changes or using AI assistants, refer to `.ai/README.md` for the full set of standards.
-
 ### Shared Utilities
 - **Price Formatting** (`lib/utils/formatPrice.tsx`): Centralized price display with discount handling
 - **Locale Validation** (`lib/i18n/locales.tsx`): Type-safe locale validation utilities

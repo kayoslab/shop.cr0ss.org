@@ -1,5 +1,7 @@
 # Next.js 15 Patterns
 
+> **When to consult**: Before creating pages, layouts, API routes, or working with Server/Client components. This document covers Next.js 15 specific requirements including async params, caching, and component boundaries.
+
 ## Async Params and SearchParams
 
 Next.js 15 requires `params` and `searchParams` to be awaited as Promises.

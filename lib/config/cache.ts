@@ -37,7 +37,4 @@ export const CACHE_REVALIDATION = {
   CATEGORIES: 3600,
 } as const;
 
-/**
- * Type representing available cache durations
- */
 export type CacheRevalidation = typeof CACHE_REVALIDATION[keyof typeof CACHE_REVALIDATION];

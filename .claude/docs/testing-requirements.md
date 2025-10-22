@@ -1,5 +1,7 @@
 # Testing Requirements
 
+> **When to consult**: Before writing tests, creating utilities, or implementing business logic. This document covers test structure, coverage requirements, mocking patterns, and testing best practices.
+
 ## Test Framework
 
 - ✅ **REQUIRED:** Vitest for unit and integration tests

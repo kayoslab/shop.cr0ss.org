@@ -1,4 +1,3 @@
-// components/cart/CartCountClient.tsx
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';

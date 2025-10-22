@@ -4,6 +4,7 @@ import { fetchCategoryContentFromCMS } from '@/lib/contentful/category';
 import { SupportedLocale, isSupportedLocale } from '@/lib/i18n/locales';
 import { cmsTags } from '@/lib/cache/tags';
 import { ErrorResponses } from '@/lib/utils/apiErrors';
+import { CACHE_REVALIDATION as cache_revalidation } from '@/lib/config/cache';
 
 export interface CategoryCMSContentDTO {
   title: string;
@@ -28,7 +29,7 @@ const cachedFetchCategory = (
 ) =>
   cache(_fetchCategory, ['api-cms-category', slug, locale, String(preview)], {
     tags: [cmsTags.category(slug, locale)],
-    revalidate: 60 * 5,
+    revalidate: cache_revalidation.HOME,
   })(slug, locale, preview);
 
 export async function GET(

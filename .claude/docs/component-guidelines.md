@@ -1,5 +1,7 @@
 # Component Guidelines
 
+> **When to consult**: Before creating or modifying React components. This document covers Server vs Client component decisions, naming conventions, props patterns, styling, and accessibility requirements.
+
 ## Server vs Client Components
 
 ### Default: Server Components

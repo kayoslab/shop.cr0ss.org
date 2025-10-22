@@ -1,5 +1,7 @@
 # TypeScript Standards
 
+> **When to consult**: Before writing any TypeScript code, creating types/interfaces, or working with external data. This document defines strict type safety requirements, DTO patterns, and type guard conventions.
+
 ## Strict Mode Requirements
 
 - ✅ **MUST** use TypeScript strict mode (`strict: true` in tsconfig.json)

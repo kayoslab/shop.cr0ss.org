@@ -1,4 +1,3 @@
-// components/Nav.tsx
 import Link from 'next/link';
 import type { CategoryDTO } from '@/lib/ct/dto/category';
 import LangSwitcher from '@/components/LangSwitcher';

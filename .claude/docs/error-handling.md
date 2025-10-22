@@ -1,5 +1,7 @@
 # Error Handling
 
+> **When to consult**: Before creating API routes, handling errors, or implementing validation. This document covers centralized error responses, error boundaries, and validation patterns.
+
 ## API Error Responses
 
 ### Centralized Error Handling

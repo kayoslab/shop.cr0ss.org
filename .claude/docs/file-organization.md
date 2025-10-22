@@ -1,5 +1,7 @@
 # File Organization
 
+> **When to consult**: Before creating new files, organizing imports, or structuring directories. This document defines naming conventions, directory structure, and import organization standards.
+
 ## Directory Structure
 
 ```

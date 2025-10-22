@@ -1,5 +1,7 @@
 # Caching Strategy
 
+> **When to consult**: Before implementing data fetching, setting revalidation times, or working with cache tags. This document covers ISR patterns, cache tag conventions, and revalidation strategies.
+
 ## Centralized Cache Configuration
 
 ⚠️ **IMPORTANT:** Next.js segment config exports MUST be literal values, not imported constants.

@@ -5,6 +5,7 @@ import { mapProductProjectionToDTO } from '@/lib/ct/products';
 import type { Category, ProductProjectionPagedQueryResponse } from '@commercetools/platform-sdk';
 import { SupportedLocale, localeToCountry, localeToCurrency, otherLocale, isSupportedLocale } from '@/lib/i18n/locales';
 import { categoryTags } from '@/lib/cache/tags';
+import { CACHE_REVALIDATION as cache_revalidation } from '@/lib/config/cache';
 
 async function _fetchCategoryPLP(
   locale: SupportedLocale,
@@ -60,7 +61,7 @@ async function _fetchCategoryPLP(
 const cached = (locale: SupportedLocale, slug: string, qs: string, currency: string, country: string) =>
   cache(_fetchCategoryPLP, ['api-plp', locale, slug, qs, currency, country], {
     tags: [categoryTags.plp(slug, locale)],
-    revalidate: 300,
+    revalidate: cache_revalidation.CATEGORY,
   })(locale, slug, qs, currency, country);
 
 export async function GET(
@@ -87,7 +88,7 @@ export async function GET(
     // Short s-maxage and vary on locale/currency/country:
     return NextResponse.json(data, {
       headers: {
-        'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=60',
+        'Cache-Control': `public, max-age=0, s-maxage=${cache_revalidation.CATEGORY}, stale-while-revalidate=60`,
         'Vary': 'accept-encoding, locale, currency, country',
       },
     });

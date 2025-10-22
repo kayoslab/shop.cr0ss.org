@@ -33,8 +33,8 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       contentful:
-        specifier: ^11.8.4
-        version: 11.8.5
+        specifier: ^11.8.7
+        version: 11.8.7
       next:
         specifier: 15.5.4
         version: 15.5.4(@babel/core@7.28.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -229,8 +229,8 @@ packages:
     resolution: {integrity: sha512-YVR1VQZvKh78fPX1ljrjFXEstNw2FK7F5S/w5VIxULM8HYXgtS4fyd36DO/YpFqZFJ8koueaHnmAGupySryRAA==}
     engines: {node: '>=18'}
 
-  '@contentful/content-source-maps@0.11.36':
-    resolution: {integrity: sha512-J83SuySGJN6WdxBnprfpZRbvZ11q+0CxI7kyjFKC49XN7RzwlACMTIkB4bcKQ9j5sQTrfCoYs7QHiHXBCioyLg==}
+  '@contentful/content-source-maps@0.11.38':
+    resolution: {integrity: sha512-JfcTaKiNo/I4MXpPPG1xLu846lUZOKpY8TQ++UHaFJInP2+Az0hikp9wAbSjaTWFGtMUsd+DgWPPQuyunfAa6g==}
 
   '@contentful/rich-text-types@16.8.5':
     resolution: {integrity: sha512-q18RJuJCOuYveGiCIjE5xLCQc5lZ3L2Qgxrlg/H2YEobDFqdtmklazRi1XwEWaK3tMg6yVXBzKKkQfLB4qW14A==}
@@ -786,11 +786,6 @@ packages:
   '@rollup/rollup-linux-s390x-gnu@4.52.5':
     resolution: {integrity: sha512-gn8kHOrku8D4NGHMK1Y7NA7INQTRdVOntt1OCYypZPRt6skGbddska44K8iocdpxHTMMNui5oH4elPH4QOLrFQ==}
     cpu: [s390x]
-    os: [linux]
-
-  '@rollup/rollup-linux-x64-gnu@4.52.4':
-    resolution: {integrity: sha512-Wi6AXf0k0L7E2gteNsNHUs7UMwCIhsCTs6+tqQ5GPwVRWMaflqGec4Sd8n6+FNFDw9vGcReqk2KzBDhCa1DLYg==}
-    cpu: [x64]
     os: [linux]
 
   '@rollup/rollup-linux-x64-gnu@4.52.5':
@@ -1438,8 +1433,8 @@ packages:
     resolution: {integrity: sha512-Y+Qz2tGYE2ia6o42R8DG4uFSMSLJ6qfAbKQLU6p2+KxsqvbK1Fg60wKVKF+FHMShuCnlg2EwToOvxVsM2N+BrQ==}
     engines: {node: '>=18'}
 
-  contentful@11.8.5:
-    resolution: {integrity: sha512-qJJ41fy05s7tIpM6lLmlsH2z+j2GsWnkJmHFPu68gzLKxzWkwQEU7Bd4vPRKOrO96nRilynajcOAfN/3i8jGdQ==}
+  contentful@11.8.7:
+    resolution: {integrity: sha512-eEj9ELy9Yn6m+L+MHCR7aW65Mbkkni5CXxMq9wxN750prUuH7me0s/WGnR3RRQVJuejKQeFHJTZ3b7ceN3Ml2g==}
     engines: {node: '>=18'}
 
   convert-source-map@2.0.0:
@@ -3243,7 +3238,7 @@ snapshots:
     dependencies:
       buffer: 6.0.3
 
-  '@contentful/content-source-maps@0.11.36':
+  '@contentful/content-source-maps@0.11.38':
     dependencies:
       '@vercel/stega': 0.1.2
       json-pointer: 0.6.2
@@ -3656,9 +3651,6 @@ snapshots:
     optional: true
 
   '@rollup/rollup-linux-s390x-gnu@4.52.5':
-    optional: true
-
-  '@rollup/rollup-linux-x64-gnu@4.52.4':
     optional: true
 
   '@rollup/rollup-linux-x64-gnu@4.52.5':
@@ -4312,11 +4304,11 @@ snapshots:
       process: 0.11.10
       qs: 6.14.0
     optionalDependencies:
-      '@rollup/rollup-linux-x64-gnu': 4.52.4
+      '@rollup/rollup-linux-x64-gnu': 4.52.5
 
-  contentful@11.8.5:
+  contentful@11.8.7:
     dependencies:
-      '@contentful/content-source-maps': 0.11.36
+      '@contentful/content-source-maps': 0.11.38
       '@contentful/rich-text-types': 16.8.5
       axios: 1.12.2
       contentful-resolve-response: 1.9.4

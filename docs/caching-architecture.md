@@ -403,9 +403,9 @@ Based on typical Vercel deployment:
 
 | Page | TTFB (Edge) | TTFB (Far Region) | Cache Hit Rate |
 |------|-------------|-------------------|----------------|
-| Home (ISR) | 50-150ms | 100-250ms | ~95% |
-| PLP (ISR) | 50-150ms | 100-250ms | ~90% |
-| PDP (Edge) | 100-300ms | 150-400ms | 0% (no cache) |
+| Home (ISR) | 50-150ms | 100-250ms | ~95% (API cache) |
+| PLP (ISR) | 50-150ms | 100-250ms | ~90% (API cache) |
+| PDP (Edge) | 50-150ms | 100-250ms | ~90% (API cache) |
 | Cart (Edge) | 100-300ms | 150-400ms | 0% (no cache) |
 
 ---
